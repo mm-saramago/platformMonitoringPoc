@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-VENV="$ROOT/RemoteWakeupAPI/.venv"
+VENV="$ROOT/metricsGenerators/RemoteWakeupAPI/.venv"
 LOG_DIR="$ROOT/.logs"
 PID_DIR="$ROOT/.pids"
 
@@ -14,7 +14,7 @@ fi
 
 # shellcheck disable=SC1091
 source "$VENV/bin/activate"
-pip install -q -r "$ROOT/RemoteWakeupAPI/requirements.txt"
+pip install -q -r "$ROOT/metricsGenerators/RemoteWakeupAPI/requirements.txt"
 
 mkdir -p "$LOG_DIR" "$PID_DIR"
 
@@ -36,7 +36,7 @@ for svc in "${SERVICES[@]}"; do
     continue
   fi
   echo "[$svc] starting"
-  ( cd "$ROOT/$svc" && nohup python app.py >"$LOG_DIR/$svc.log" 2>&1 & echo $! >"$pidfile" )
+  ( cd "$ROOT/metricsGenerators/$svc" && nohup python app.py >"$LOG_DIR/$svc.log" 2>&1 & echo $! >"$pidfile" )
 done
 
 echo

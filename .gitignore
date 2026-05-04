@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Runtime artifacts
+.pids/
+.logs/
+
+# OS
+.DS_Store
+Thumbs.db

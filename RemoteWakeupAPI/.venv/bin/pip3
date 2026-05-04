@@ -1,4 +1,4 @@
-#!/home/fr0oz3n/platformMonitoringPoc/RemoteWakeupAPI/.venv/bin/python3
+#!/home/fr0oz3n/PLatformMonitoring/platformMonitoringPoc/RemoteWakeupAPI/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
