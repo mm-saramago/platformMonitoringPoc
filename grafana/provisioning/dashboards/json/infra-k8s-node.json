@@ -1,0 +1,49 @@
+{
+  "uid": "infra-k8s-node",
+  "title": "Infra - K8s Node",
+  "tags": ["infra", "k8s", "poc"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {"from": "now-15m", "to": "now"},
+  "timezone": "browser",
+  "links": [
+    {"title": "Up to Crosscutting Infra", "type": "link", "url": "/d/crosscutting-infra", "icon": "external link"},
+    {"title": "Up to Fleet", "type": "link", "url": "/d/fleet", "icon": "external link"}
+  ],
+  "panels": [
+    {
+      "type": "timeseries", "id": 1, "title": "CPU Usage (%) by Node",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "k8s_node_cpu_usage_percent", "legendFormat": "{{k8s_node_name}}"}]
+    },
+    {
+      "type": "timeseries", "id": 2, "title": "Memory Usage (%) by Node",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "k8s_node_memory_usage_percent", "legendFormat": "{{k8s_node_name}}"}]
+    },
+    {
+      "type": "timeseries", "id": 3, "title": "Pods Running",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "k8s_node_pods_running_ratio", "legendFormat": "{{k8s_node_name}}"}]
+    },
+    {
+      "type": "timeseries", "id": 4, "title": "Pod Restarts (rate/5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "rate(k8s_node_pod_restarts_total[5m])", "legendFormat": "{{k8s_node_name}}"}]
+    },
+    {
+      "type": "logs", "id": 5, "title": "Logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"refId": "A", "expr": "{service_name=\"k8s-node\"}"}],
+      "options": {"showTime": true, "wrapLogMessage": true}
+    }
+  ],
+  "templating": {"list": []},
+  "annotations": {"list": []}
+}

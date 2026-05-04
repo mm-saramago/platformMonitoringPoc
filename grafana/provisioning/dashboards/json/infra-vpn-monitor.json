@@ -1,0 +1,46 @@
+{
+  "uid": "infra-vpn-monitor",
+  "title": "Infra - VPN Monitor (Vehicle)",
+  "tags": ["infra", "vpn", "vehicle", "poc"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {"from": "now-15m", "to": "now"},
+  "timezone": "browser",
+  "links": [
+    {"title": "Up to Crosscutting Infra", "type": "link", "url": "/d/crosscutting-infra", "icon": "external link"},
+    {"title": "Up to Fleet", "type": "link", "url": "/d/fleet", "icon": "external link"}
+  ],
+  "panels": [
+    {
+      "type": "timeseries", "id": 1, "title": "Tunnel Up by Train (1 = up)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "vpn_monitor_tunnel_up_ratio", "legendFormat": "{{train_id}}"}]
+    },
+    {
+      "type": "timeseries", "id": 2, "title": "Reconnects (rate/5m)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "rate(vpn_monitor_reconnects_total[5m])", "legendFormat": "{{train_id}}"}]
+    },
+    {
+      "type": "timeseries", "id": 3, "title": "RTT (p50/p95)",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(vpn_monitor_rtt_ms_milliseconds_bucket[5m])))", "legendFormat": "p95"},
+        {"refId": "B", "expr": "histogram_quantile(0.50, sum by (le) (rate(vpn_monitor_rtt_ms_milliseconds_bucket[5m])))", "legendFormat": "p50"}
+      ]
+    },
+    {
+      "type": "logs", "id": 4, "title": "Logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"refId": "A", "expr": "{service_name=\"vpn-monitor\"}"}],
+      "options": {"showTime": true, "wrapLogMessage": true}
+    }
+  ],
+  "templating": {"list": []},
+  "annotations": {"list": []}
+}

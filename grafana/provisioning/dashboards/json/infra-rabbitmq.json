@@ -1,0 +1,46 @@
+{
+  "uid": "infra-rabbitmq",
+  "title": "Infra - RabbitMQ",
+  "tags": ["infra", "rabbitmq", "poc"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {"from": "now-15m", "to": "now"},
+  "timezone": "browser",
+  "links": [
+    {"title": "Up to Crosscutting Infra", "type": "link", "url": "/d/crosscutting-infra", "icon": "external link"},
+    {"title": "Up to Fleet", "type": "link", "url": "/d/fleet", "icon": "external link"}
+  ],
+  "panels": [
+    {
+      "type": "timeseries", "id": 1, "title": "Queue Depth",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "rabbitmq_queue_depth_ratio", "legendFormat": "{{queue_name}}"}]
+    },
+    {
+      "type": "timeseries", "id": 2, "title": "Active Connections",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "rabbitmq_active_connections_ratio", "legendFormat": "connections"}]
+    },
+    {
+      "type": "timeseries", "id": 3, "title": "Publish vs Consume (rate/min)",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"refId": "A", "expr": "sum by (queue_name) (rate(rabbitmq_messages_published_total[1m])) * 60", "legendFormat": "pub:{{queue_name}}"},
+        {"refId": "B", "expr": "sum by (queue_name) (rate(rabbitmq_messages_consumed_total[1m])) * 60", "legendFormat": "con:{{queue_name}}"}
+      ]
+    },
+    {
+      "type": "logs", "id": 4, "title": "Logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"refId": "A", "expr": "{service_name=\"rabbitmq\"}"}],
+      "options": {"showTime": true, "wrapLogMessage": true}
+    }
+  ],
+  "templating": {"list": []},
+  "annotations": {"list": []}
+}

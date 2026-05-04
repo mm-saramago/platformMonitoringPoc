@@ -1,0 +1,46 @@
+{
+  "uid": "infra-mqtt-broker",
+  "title": "Infra - MQTT Broker",
+  "tags": ["infra", "mqtt", "poc"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {"from": "now-15m", "to": "now"},
+  "timezone": "browser",
+  "links": [
+    {"title": "Up to Crosscutting Infra", "type": "link", "url": "/d/crosscutting-infra", "icon": "external link"},
+    {"title": "Up to Fleet", "type": "link", "url": "/d/fleet", "icon": "external link"}
+  ],
+  "panels": [
+    {
+      "type": "timeseries", "id": 1, "title": "Connected Clients",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "mqtt_broker_connected_clients_ratio", "legendFormat": "clients"}]
+    },
+    {
+      "type": "timeseries", "id": 2, "title": "Messages Received vs Sent (rate/min)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"refId": "A", "expr": "rate(mqtt_broker_messages_received_total[1m]) * 60", "legendFormat": "received"},
+        {"refId": "B", "expr": "rate(mqtt_broker_messages_sent_total[1m]) * 60", "legendFormat": "sent"}
+      ]
+    },
+    {
+      "type": "timeseries", "id": 3, "title": "Dropped Messages (rate/5m)",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "rate(mqtt_broker_messages_dropped_total[5m])", "legendFormat": "dropped"}]
+    },
+    {
+      "type": "logs", "id": 4, "title": "Logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"refId": "A", "expr": "{service_name=\"mqtt-broker\"}"}],
+      "options": {"showTime": true, "wrapLogMessage": true}
+    }
+  ],
+  "templating": {"list": []},
+  "annotations": {"list": []}
+}
