@@ -19,7 +19,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
 SERVICE_NAME = "k8s-node"
-LAYER = "infrastructure"
 NODE_NAMES = ["wayside-node-1", "wayside-node-2"]
 INTERVAL_SECONDS = 10
 
@@ -38,8 +37,13 @@ def configure_telemetry():
         {
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
+            "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": LAYER,
+            "component.layer": "infrastructure",
+            "component.type": "watchdog",
+            "watchdog.target": "k8s-node",
+            "watchdog.target.category": "node",
+            "watchdog.check.type": "poll",
         }
     )
 
@@ -85,27 +89,56 @@ def main() -> None:
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
+    # Watchdog metrics
+    check_health = meter.create_gauge(
+        name="watchdog.check.health",
+        description="Health state from the last check (1=healthy, 0=unhealthy).",
+        unit="1",
+    )
+    check_duration = meter.create_histogram(
+        name="watchdog.check.duration",
+        description="Duration of the watchdog health check.",
+        unit="s",
+    )
+    consecutive_failures = meter.create_gauge(
+        name="watchdog.consecutive_failures",
+        description="Number of consecutive failed checks.",
+        unit="{failure}",
+    )
+    last_check_ts = meter.create_gauge(
+        name="watchdog.last_check.timestamp",
+        description="Unix timestamp of the last check.",
+        unit="s",
+    )
+    recovery_count = meter.create_counter(
+        name="watchdog.recovery.count",
+        description="Total recovery events observed.",
+        unit="1",
+    )
+    # Process metrics
     cpu_gauge = meter.create_gauge(
-        name="k8s_node_cpu_usage_percent",
-        description="Simulated CPU utilization of the K8s node.",
+        name="process.cpu.usage",
+        description="Simulated CPU utilisation of the K8s node.",
         unit="%",
     )
     memory_gauge = meter.create_gauge(
-        name="k8s_node_memory_usage_percent",
-        description="Simulated memory utilization of the K8s node.",
+        name="process.memory.usage",
+        description="Simulated memory utilisation of the K8s node.",
         unit="%",
     )
+    # Supplementary
     pods_gauge = meter.create_gauge(
-        name="k8s_node_pods_running",
+        name="k8s.node.pods_running",
         description="Number of pods currently running on the node.",
-        unit="1",
+        unit="{pod}",
     )
     restarts_counter = meter.create_counter(
-        name="k8s_node_pod_restarts_total",
+        name="k8s.node.pod_restarts",
         description="Total simulated pod restarts observed on the node.",
         unit="1",
     )
 
+    fail_streak = {n: 0 for n in NODE_NAMES}
     iteration = 0
     try:
         while not stop_requested:
@@ -116,18 +149,27 @@ def main() -> None:
                 pods = random.randint(8, 25)
                 restarts = 1 if random.random() < 0.1 else 0
                 healthy = cpu < 80 and memory < 85
-                attributes = {
-                    "k8s.node.name": node,
-                    "node.healthy": healthy,
-                    "loop.iteration": iteration,
-                }
+                dur = round(random.uniform(0.01, 0.15), 4)
+                attrs = {"k8s.node.name": node}
 
-                with tracer.start_as_current_span("k8s_node.sample", attributes=attributes):
-                    cpu_gauge.set(cpu, attributes)
-                    memory_gauge.set(memory, attributes)
-                    pods_gauge.set(pods, attributes)
+                with tracer.start_as_current_span("k8s_node.sample", attributes=attrs):
+                    check_duration.record(dur, attrs)
+                    check_health.set(1 if healthy else 0, attrs)
+                    last_check_ts.set(time.time(), attrs)
+
+                    if healthy:
+                        if fail_streak[node] > 0:
+                            recovery_count.add(1, attrs)
+                        fail_streak[node] = 0
+                    else:
+                        fail_streak[node] += 1
+
+                    consecutive_failures.set(fail_streak[node], attrs)
+                    cpu_gauge.set(cpu, attrs)
+                    memory_gauge.set(memory, attrs)
+                    pods_gauge.set(pods, attrs)
                     if restarts:
-                        restarts_counter.add(restarts, attributes)
+                        restarts_counter.add(restarts, attrs)
 
                 logger.info(
                     "Sampled K8s node metrics",

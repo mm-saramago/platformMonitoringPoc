@@ -31,19 +31,20 @@ def request_stop(signum, _frame) -> None:
     logging.getLogger(SERVICE_NAME).info("Shutdown requested", extra={"signal": signum})
 
 
-def configure_telemetry() -> tuple[
-    logging.Logger,
-    trace.Tracer,
-    metrics.Meter,
-    TracerProvider,
-    MeterProvider,
-    LoggerProvider,
-]:
+def configure_telemetry():
     resource = Resource.create(
         {
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
+            "service.version": "1.0.0",
+            "service.instance.id": "remote-wakeup-api-001",
             "deployment.environment": "local",
+            "platform.layer": "functional",
+            "platform.feature": "remote-wakeup",
+            "component.type": "microservice",
+            "owner.team": "remote-wakeup",
+            "runtime.kind": "service",
+            "service.location": "wayside",
         }
     )
 
@@ -89,15 +90,39 @@ def main() -> None:
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    request_counter = meter.create_counter(
-        name="remote_wakeup_requests_total",
-        description="Total number of remote wakeup requests sent by the sample app.",
+    # Latency
+    request_duration = meter.create_histogram(
+        name="http.server.request.duration",
+        description="Duration of HTTP server requests.",
+        unit="s",
+    )
+    # Traffic
+    transaction_count = meter.create_counter(
+        name="business.transaction.count",
+        description="Total business transactions processed.",
         unit="1",
     )
-    latency_histogram = meter.create_histogram(
-        name="remote_wakeup_duration_ms",
-        description="Observed duration of the remote wakeup loop iteration.",
-        unit="ms",
+    # Saturation
+    active_requests = meter.create_gauge(
+        name="http.server.active_requests",
+        description="Number of active HTTP requests.",
+        unit="{request}",
+    )
+    cpu_usage = meter.create_gauge(
+        name="process.cpu.usage",
+        description="CPU usage of the service process.",
+        unit="1",
+    )
+    memory_usage = meter.create_gauge(
+        name="process.memory.usage",
+        description="Memory usage of the service process.",
+        unit="By",
+    )
+    # Errors
+    dependency_up = meter.create_gauge(
+        name="service.dependency.up",
+        description="Health state of service dependencies (1=up, 0=down).",
+        unit="1",
     )
 
     iteration = 0
@@ -105,35 +130,38 @@ def main() -> None:
         while not stop_requested:
             iteration += 1
             device_id = f"charger-{random.randint(1000, 9999)}"
-            simulated_duration_ms = round(random.uniform(40.0, 250.0), 2)
+            duration_s = round(random.uniform(0.04, 0.25), 4)
             accepted = random.choice([True, True, True, False])
             wakeup_status = "accepted" if accepted else "rejected"
             attributes = {
                 "device.id": device_id,
                 "wakeup.status": wakeup_status,
-                "loop.iteration": iteration,
             }
+
+            concurrent = random.randint(1, 15)
+            active_requests.set(concurrent)
 
             with tracer.start_as_current_span("remote_wakeup.dispatch", attributes=attributes) as span:
                 span.add_event(
                     "remote_wakeup.requested",
-                    {
-                        "device.id": device_id,
-                        "requested.at": int(time.time()),
-                    },
+                    {"device.id": device_id, "requested.at": int(time.time())},
                 )
-                time.sleep(simulated_duration_ms / 1000)
-                span.set_attribute("remote_wakeup.duration_ms", simulated_duration_ms)
+                time.sleep(duration_s)
+                span.set_attribute("http.request.duration_s", duration_s)
                 span.set_attribute("remote_wakeup.accepted", accepted)
 
-            request_counter.add(1, attributes)
-            latency_histogram.record(simulated_duration_ms, attributes)
+            transaction_count.add(1, attributes)
+            request_duration.record(duration_s, attributes)
+            cpu_usage.set(round(random.uniform(0.05, 0.60), 4))
+            memory_usage.set(random.randint(100_000_000, 500_000_000))
+            dependency_up.set(1 if random.random() > 0.02 else 0, {"dependency.name": "rabbitmq"})
+
             logger.info(
                 "Processed remote wakeup request",
                 extra={
                     "device_id": device_id,
                     "wakeup_status": wakeup_status,
-                    "duration_ms": simulated_duration_ms,
+                    "duration_s": duration_s,
                     "iteration": iteration,
                 },
             )

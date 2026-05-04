@@ -19,7 +19,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
 SERVICE_NAME = "vpn-monitor"
-LAYER = "infrastructure"
 TRAIN_IDS = ["train-001", "train-002"]
 INTERVAL_SECONDS = 10
 
@@ -38,8 +37,13 @@ def configure_telemetry():
         {
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
+            "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": LAYER,
+            "component.layer": "infrastructure",
+            "component.type": "watchdog",
+            "watchdog.target": "vpn-tunnel",
+            "watchdog.check.type": "probe",
+            "service.location": "onboard",
         }
     )
 
@@ -85,49 +89,71 @@ def main() -> None:
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    tunnel_up_gauge = meter.create_gauge(
-        name="vpn_monitor_tunnel_up",
-        description="VPN tunnel state from the on-board monitor (1 = up, 0 = down).",
+    # Watchdog metrics
+    check_health = meter.create_gauge(
+        name="watchdog.check.health",
+        description="VPN tunnel state (1=up, 0=down).",
         unit="1",
     )
-    rtt_histogram = meter.create_histogram(
-        name="vpn_monitor_rtt_ms",
+    check_duration = meter.create_histogram(
+        name="watchdog.check.duration",
         description="Round trip time observed across the VPN tunnel.",
-        unit="ms",
+        unit="s",
     )
-    reconnects_counter = meter.create_counter(
-        name="vpn_monitor_reconnects_total",
-        description="Total VPN reconnect attempts performed by the on-board monitor.",
+    consecutive_failures = meter.create_gauge(
+        name="watchdog.consecutive_failures",
+        description="Number of consecutive failed probes.",
+        unit="{failure}",
+    )
+    last_check_ts = meter.create_gauge(
+        name="watchdog.last_check.timestamp",
+        description="Unix timestamp of the last probe.",
+        unit="s",
+    )
+    recovery_count = meter.create_counter(
+        name="watchdog.recovery.count",
+        description="Total VPN reconnect / recovery events.",
         unit="1",
+    )
+    packet_loss = meter.create_gauge(
+        name="watchdog.packet.loss",
+        description="Observed packet loss percentage.",
+        unit="%",
     )
 
+    fail_streak = {t: 0 for t in TRAIN_IDS}
     iteration = 0
     try:
         while not stop_requested:
             iteration += 1
             for train in TRAIN_IDS:
-                up = 1 if random.random() > 0.05 else 0
-                rtt = round(random.uniform(20.0, 350.0), 2)
-                reconnects = 0 if up else random.randint(1, 3)
-                attributes = {
-                    "train.id": train,
-                    "tunnel.up": bool(up),
-                    "loop.iteration": iteration,
-                }
+                up = random.random() > 0.05
+                rtt_s = round(random.uniform(0.02, 0.35), 4)
+                loss = round(random.uniform(0.0, 2.0), 2) if up else round(random.uniform(5.0, 30.0), 2)
+                attrs = {"vehicle.id": train}
 
-                with tracer.start_as_current_span("vpn_monitor.probe", attributes=attributes):
-                    tunnel_up_gauge.set(up, attributes)
-                    rtt_histogram.record(rtt, attributes)
-                    if reconnects:
-                        reconnects_counter.add(reconnects, attributes)
+                with tracer.start_as_current_span("vpn_monitor.probe", attributes=attrs):
+                    check_health.set(1 if up else 0, attrs)
+                    check_duration.record(rtt_s, attrs)
+                    last_check_ts.set(time.time(), attrs)
+                    packet_loss.set(loss, attrs)
+
+                    if up:
+                        if fail_streak[train] > 0:
+                            recovery_count.add(1, attrs)
+                        fail_streak[train] = 0
+                    else:
+                        fail_streak[train] += 1
+
+                    consecutive_failures.set(fail_streak[train], attrs)
 
                 logger.info(
                     "Probed VPN tunnel from vehicle",
                     extra={
                         "train_id": train,
-                        "tunnel_up": bool(up),
-                        "rtt_ms": rtt,
-                        "reconnects": reconnects,
+                        "tunnel_up": up,
+                        "rtt_s": rtt_s,
+                        "packet_loss_pct": loss,
                     },
                 )
 

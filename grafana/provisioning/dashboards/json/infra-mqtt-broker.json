@@ -1,46 +1,261 @@
 {
   "uid": "infra-mqtt-broker",
   "title": "Infra - MQTT Broker",
-  "tags": ["infra", "mqtt", "poc"],
+  "tags": [
+    "infra",
+    "mqtt",
+    "poc"
+  ],
   "schemaVersion": 39,
   "version": 1,
   "refresh": "10s",
-  "time": {"from": "now-15m", "to": "now"},
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
   "timezone": "browser",
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
   "links": [
-    {"title": "Up to Crosscutting Infra", "type": "link", "url": "/d/crosscutting-infra", "icon": "external link"},
-    {"title": "Up to Fleet", "type": "link", "url": "/d/fleet", "icon": "external link"}
+    {
+      "title": "Up to Crosscutting Infra",
+      "type": "link",
+      "url": "/d/crosscutting-infra",
+      "icon": "external link"
+    },
+    {
+      "title": "Up to Fleet",
+      "type": "link",
+      "url": "/d/fleet",
+      "icon": "external link"
+    }
   ],
   "panels": [
     {
-      "type": "timeseries", "id": 1, "title": "Connected Clients",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "mqtt_broker_connected_clients_ratio", "legendFormat": "clients"}]
-    },
-    {
-      "type": "timeseries", "id": 2, "title": "Messages Received vs Sent (rate/min)",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "type": "gauge",
+      "id": 1,
+      "title": "Queue Depth [gauge]",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
-        {"refId": "A", "expr": "rate(mqtt_broker_messages_received_total[1m]) * 60", "legendFormat": "received"},
-        {"refId": "B", "expr": "rate(mqtt_broker_messages_sent_total[1m]) * 60", "legendFormat": "sent"}
-      ]
+        {
+          "refId": "A",
+          "expr": "messaging_queue_depth{service_name=\"mqtt-broker\"}",
+          "legendFormat": "{{messaging_destination_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "min": 0
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
     },
     {
-      "type": "timeseries", "id": 3, "title": "Dropped Messages (rate/5m)",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "rate(mqtt_broker_messages_dropped_total[5m])", "legendFormat": "dropped"}]
+      "type": "timeseries",
+      "id": 2,
+      "title": "Publish vs Process (rate/min) [counter]",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(messaging_publish_messages_total{service_name=\"mqtt-broker\"}[1m]) * 60",
+          "legendFormat": "received"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(messaging_process_messages_total{service_name=\"mqtt-broker\"}[1m]) * 60",
+          "legendFormat": "sent"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 30,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
     },
     {
-      "type": "logs", "id": 4, "title": "Logs",
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
-      "datasource": {"type": "loki", "uid": "loki"},
-      "targets": [{"refId": "A", "expr": "{service_name=\"mqtt-broker\"}"}],
-      "options": {"showTime": true, "wrapLogMessage": true}
+      "type": "timeseries",
+      "id": 3,
+      "title": "Publish Duration (p50/p95) [histogram]",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(messaging_publish_duration_seconds_bucket{service_name=\"mqtt-broker\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(messaging_publish_duration_seconds_bucket{service_name=\"mqtt-broker\"}[5m])))",
+          "legendFormat": "p50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "scheme"
+          }
+        }
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "type": "gauge",
+      "id": 4,
+      "title": "Consumer Lag (messages) [gauge]",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "messaging_consumer_lag{service_name=\"mqtt-broker\"}",
+          "legendFormat": "{{messaging_destination_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "min": 0
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "type": "logs",
+      "id": 5,
+      "title": "Logs",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=\"mqtt-broker\"}"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true
+      }
     }
-  ],
-  "templating": {"list": []},
-  "annotations": {"list": []}
+  ]
 }

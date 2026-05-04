@@ -26,21 +26,21 @@ Loki    Prometheus  Tempo
 
 ## Metric Generators
 
-| Service                | Layer          | Description                              |
-|------------------------|----------------|------------------------------------------|
-| RemoteWakeupAPI        | —              | Simulates remote wakeup request dispatch |
-| RemoteWakeupService    | functional     | Simulates on-vehicle wakeup execution    |
-| K8sNode                | infrastructure | Simulates K8s node CPU/memory/pod stats  |
-| T2GGateway             | crosscutting   | Simulates train-to-ground message routing|
-| RabbitMQ               | infrastructure | Simulates AMQP queue depth and throughput|
-| MQTTBroker             | infrastructure | Simulates MQTT client/message activity   |
-| VPNTerminatorGround    | infrastructure | Simulates ground-side VPN termination    |
-| VPNMonitor             | infrastructure | Simulates on-board VPN tunnel probing    |
+| Service             | Layer                        | Description                               |
+|---------------------|------------------------------|-------------------------------------------|
+| RemoteWakeupAPI     | Feature                      | Simulates remote wakeup request dispatch  |
+| RemoteWakeupService | Feature                      | Simulates on-vehicle wakeup execution     |
+| K8sNode             | Crosscutting / Infrastructure | Simulates K8s node CPU/memory/pod stats   |
+| T2GGateway          | Component                    | Simulates train-to-ground message routing |
+| RabbitMQ            | Crosscutting / Infrastructure | Simulates AMQP queue depth and throughput |
+| MQTTBroker          | Crosscutting / Infrastructure | Simulates MQTT client/message activity    |
+| VPNTerminatorGround | Crosscutting / Infrastructure | Simulates ground-side VPN termination     |
+| VPNMonitor          | Crosscutting / Infrastructure | Simulates on-board VPN tunnel probing     |
 
 ## Prerequisites
 
 - Docker & Docker Compose
-- Python 3.10+
+- Python 3.10+F
 
 ## Quick Start
 

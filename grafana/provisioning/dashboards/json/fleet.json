@@ -1,76 +1,202 @@
 {
   "uid": "fleet",
   "title": "Fleet",
-  "tags": ["fleet", "poc"],
+  "tags": [
+    "fleet",
+    "poc"
+  ],
   "schemaVersion": 39,
   "version": 1,
   "refresh": "10s",
-  "time": {"from": "now-15m", "to": "now"},
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
   "timezone": "browser",
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
   "panels": [
     {
       "type": "row",
       "id": 100,
       "title": "Features",
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "collapsed": false
     },
     {
       "type": "stat",
       "id": 1,
       "title": "Remote Wakeup (Feature)",
-      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 1},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
           "refId": "A",
-          "expr": "(((clamp_max(count(count_over_time(remote_wakeup_requests_total[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(remote_wakeup_service_dispatched_total[2m])), 1)) or on() vector(0))) == bool 2"
+          "expr": "(((clamp_max(count(count_over_time(business_transaction_count_total{service_name=\"remote-wakeup-api\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(vehicle_message_sync_count_total{service_name=\"remote-wakeup-service\"}[2m])), 1)) or on() vector(0))) == bool 2"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            {"type": "value", "options": {"0": {"text": "DEGRADED", "color": "red", "index": 0}, "1": {"text": "HEALTHY", "color": "green", "index": 1}}}
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DEGRADED",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
           ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
-          "color": {"mode": "thresholds"},
-          "links": [{"title": "Drill down to Feature", "url": "/d/feature-remote-wakeup", "targetBlank": false}]
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Drill down to Feature",
+              "url": "/d/feature-remote-wakeup",
+              "targetBlank": false
+            }
+          ]
         }
       },
-      "options": {"colorMode": "background", "graphMode": "none", "textMode": "value_and_name", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}}
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
     },
     {
       "type": "row",
       "id": 200,
       "title": "Crosscutting",
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 7},
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
       "collapsed": false
     },
     {
       "type": "stat",
       "id": 2,
       "title": "Crosscutting Component Infrastructure",
-      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 8},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
           "refId": "A",
-          "expr": "(((clamp_max(count(count_over_time(k8s_node_cpu_usage_percent[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(t2g_gateway_messages_total[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(rabbitmq_active_connections_ratio[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(mqtt_broker_connected_clients_ratio[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(vpn_terminator_active_tunnels_ratio[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(vpn_monitor_tunnel_up_ratio[2m])), 1)) or on() vector(0))) == bool 6"
+          "expr": "(((clamp_max(count(count_over_time(process_cpu_usage_percent{service_name=\"k8s-node\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(gateway_connections_active{service_name=\"t2g-gateway\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(messaging_queue_depth{service_name=\"rabbitmq\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(messaging_publish_messages_total{service_name=\"mqtt-broker\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(watchdog_check_health_ratio{service_name=\"vpn-monitor\"}[2m])), 1)) or on() vector(0))) == bool 6"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            {"type": "value", "options": {"0": {"text": "INFRA DEGRADED", "color": "red", "index": 0}, "1": {"text": "INFRA HEALTHY", "color": "green", "index": 1}}}
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "INFRA DEGRADED",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "INFRA HEALTHY",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
           ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
-          "color": {"mode": "thresholds"},
-          "links": [{"title": "Drill down to Crosscutting Infra", "url": "/d/crosscutting-infra", "targetBlank": false}]
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Drill down to Crosscutting Infra",
+              "url": "/d/crosscutting-infra",
+              "targetBlank": false
+            }
+          ]
         }
       },
-      "options": {"colorMode": "background", "graphMode": "none", "textMode": "value_and_name", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}}
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
     }
-  ],
-  "templating": {"list": []},
-  "annotations": {"list": []}
+  ]
 }

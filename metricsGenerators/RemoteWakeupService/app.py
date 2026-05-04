@@ -19,7 +19,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
 SERVICE_NAME = "remote-wakeup-service"
-LAYER = "functional"
 TRAIN_IDS = ["train-001", "train-002"]
 INTERVAL_SECONDS = 10
 
@@ -38,8 +37,14 @@ def configure_telemetry():
         {
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
+            "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": LAYER,
+            "component.layer": "functional",
+            "component.type": "onboard",
+            "platform.feature": "remote-wakeup",
+            "runtime.kind": "agent",
+            "service.location": "onboard",
+            "vehicle.fleet": "fleet-alpha",
         }
     )
 
@@ -85,20 +90,58 @@ def main() -> None:
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    dispatched_counter = meter.create_counter(
-        name="remote_wakeup_service_dispatched_total",
-        description="Total wakeup commands dispatched on the train side.",
+    # Traffic
+    heartbeat_timestamp = meter.create_gauge(
+        name="vehicle.heartbeat.timestamp",
+        description="Timestamp of the last heartbeat from the vehicle.",
+        unit="s",
+    )
+    message_sync_count = meter.create_counter(
+        name="vehicle.message.sync.count",
+        description="Total messages synchronised from the vehicle.",
+        unit="{message}",
+    )
+    # Errors
+    heartbeat_lag = meter.create_gauge(
+        name="vehicle.heartbeat.lag",
+        description="Seconds since the last successful heartbeat.",
+        unit="s",
+    )
+    connectivity_state = meter.create_gauge(
+        name="vehicle.connectivity.state",
+        description="Connectivity state of the vehicle (1=online, 0=offline).",
         unit="1",
     )
-    duration_histogram = meter.create_histogram(
-        name="remote_wakeup_service_duration_ms",
-        description="Time taken on the vehicle to execute a wakeup command.",
-        unit="ms",
-    )
-    pending_gauge = meter.create_gauge(
-        name="remote_wakeup_service_pending_commands",
-        description="Wakeup commands queued on the vehicle awaiting execution.",
+    error_count = meter.create_counter(
+        name="vehicle.error.count",
+        description="Total errors reported by the vehicle.",
         unit="1",
+    )
+    update_status = meter.create_gauge(
+        name="vehicle.update.status",
+        description="Software update status (0=idle, 1=pending, 2=in-progress).",
+        unit="1",
+    )
+    # Saturation
+    message_backlog = meter.create_gauge(
+        name="vehicle.message.backlog",
+        description="Messages queued on the vehicle awaiting sync.",
+        unit="{message}",
+    )
+    cpu_usage = meter.create_gauge(
+        name="vehicle.cpu.usage",
+        description="Vehicle CPU usage.",
+        unit="%",
+    )
+    memory_usage = meter.create_gauge(
+        name="vehicle.memory.usage",
+        description="Vehicle memory usage.",
+        unit="%",
+    )
+    storage_usage = meter.create_gauge(
+        name="vehicle.storage.usage",
+        description="Vehicle storage usage.",
+        unit="%",
     )
 
     iteration = 0
@@ -106,32 +149,40 @@ def main() -> None:
         while not stop_requested:
             iteration += 1
             for train in TRAIN_IDS:
-                duration_ms = round(random.uniform(60.0, 400.0), 2)
+                now = time.time()
                 success = random.random() > 0.05
                 status = "ok" if success else "failed"
                 pending = random.randint(0, 8)
-                attributes = {
-                    "train.id": train,
-                    "wakeup.status": status,
-                    "loop.iteration": iteration,
-                }
+                lag = round(random.uniform(0.5, 30.0), 2)
+                online = 1 if random.random() > 0.08 else 0
+                attrs = {"vehicle.id": train, "wakeup.status": status}
 
-                with tracer.start_as_current_span("remote_wakeup_service.execute", attributes=attributes) as span:
-                    time.sleep(duration_ms / 1000)
-                    span.set_attribute("wakeup.duration_ms", duration_ms)
+                with tracer.start_as_current_span("remote_wakeup_service.execute", attributes=attrs) as span:
                     span.set_attribute("wakeup.success", success)
 
-                dispatched_counter.add(1, attributes)
-                duration_histogram.record(duration_ms, attributes)
-                pending_gauge.set(pending, {"train.id": train, "loop.iteration": iteration})
+                heartbeat_timestamp.set(now, {"vehicle.id": train})
+                heartbeat_lag.set(lag, {"vehicle.id": train})
+                connectivity_state.set(online, {"vehicle.id": train})
+                message_backlog.set(pending, {"vehicle.id": train})
+                message_sync_count.add(1, attrs)
+
+                cpu_usage.set(round(random.uniform(10.0, 75.0), 1), {"vehicle.id": train})
+                memory_usage.set(round(random.uniform(20.0, 85.0), 1), {"vehicle.id": train})
+                storage_usage.set(round(random.uniform(30.0, 70.0), 1), {"vehicle.id": train})
+
+                if not success:
+                    error_count.add(1, {"vehicle.id": train, "error.type": "wakeup_failed"})
+
+                update_status.set(random.choice([0, 0, 0, 1, 2]), {"vehicle.id": train})
 
                 logger.info(
                     "Executed wakeup command on vehicle",
                     extra={
                         "train_id": train,
                         "status": status,
-                        "duration_ms": duration_ms,
+                        "heartbeat_lag_s": lag,
                         "pending_commands": pending,
+                        "online": bool(online),
                     },
                 )
 

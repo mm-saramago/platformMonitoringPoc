@@ -1,60 +1,199 @@
 {
   "uid": "feature-remote-wakeup",
   "title": "Feature - Remote Wakeup",
-  "tags": ["feature", "remote-wakeup", "poc"],
+  "tags": [
+    "feature",
+    "remote-wakeup",
+    "poc"
+  ],
   "schemaVersion": 39,
   "version": 1,
   "refresh": "10s",
-  "time": {"from": "now-15m", "to": "now"},
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
   "timezone": "browser",
-  "links": [{"title": "Up to Fleet", "type": "link", "url": "/d/fleet", "icon": "external link"}],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "Up to Fleet",
+      "type": "link",
+      "url": "/d/fleet",
+      "icon": "external link"
+    }
+  ],
   "panels": [
     {
       "type": "row",
       "id": 100,
       "title": "Components",
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "collapsed": false
     },
     {
       "type": "stat",
       "id": 1,
       "title": "Remote Wakeup API (Wayside)",
-      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 1},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
-        {"refId": "A", "expr": "(clamp_max(count(count_over_time(remote_wakeup_requests_total[2m])), 1)) or on() vector(0)"}
+        {
+          "refId": "A",
+          "expr": "(clamp_max(count(count_over_time(business_transaction_count_total{service_name=\"remote-wakeup-api\"}[2m])), 1)) or on() vector(0)"
+        }
       ],
       "fieldConfig": {
         "defaults": {
-          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red", "index": 0}, "1": {"text": "UP", "color": "green", "index": 1}}}],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
-          "color": {"mode": "thresholds"},
-          "links": [{"title": "Drill down", "url": "/d/component-remote-wakeup-api", "targetBlank": false}]
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Drill down",
+              "url": "/d/component-remote-wakeup-api",
+              "targetBlank": false
+            }
+          ]
         }
       },
-      "options": {"colorMode": "background", "graphMode": "none", "textMode": "value_and_name", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}}
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
     },
     {
       "type": "stat",
       "id": 2,
       "title": "Remote Wakeup Service (Vehicle)",
-      "gridPos": {"h": 6, "w": 8, "x": 8, "y": 1},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
-        {"refId": "A", "expr": "(clamp_max(count(count_over_time(remote_wakeup_service_dispatched_total[2m])), 1)) or on() vector(0)"}
+        {
+          "refId": "A",
+          "expr": "(clamp_max(count(count_over_time(vehicle_message_sync_count_total{service_name=\"remote-wakeup-service\"}[2m])), 1)) or on() vector(0)"
+        }
       ],
       "fieldConfig": {
         "defaults": {
-          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red", "index": 0}, "1": {"text": "UP", "color": "green", "index": 1}}}],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
-          "color": {"mode": "thresholds"},
-          "links": [{"title": "Drill down", "url": "/d/component-remote-wakeup-service", "targetBlank": false}]
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Drill down",
+              "url": "/d/component-remote-wakeup-service",
+              "targetBlank": false
+            }
+          ]
         }
       },
-      "options": {"colorMode": "background", "graphMode": "none", "textMode": "value_and_name", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}}
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
     }
-  ],
-  "templating": {"list": []},
-  "annotations": {"list": []}
+  ]
 }

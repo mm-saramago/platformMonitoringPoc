@@ -19,7 +19,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
 SERVICE_NAME = "rabbitmq"
-LAYER = "infrastructure"
 QUEUE_NAMES = ["wakeup.requests", "wakeup.responses", "telemetry.events"]
 INTERVAL_SECONDS = 10
 
@@ -38,8 +37,12 @@ def configure_telemetry():
         {
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
+            "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": LAYER,
+            "component.layer": "infrastructure",
+            "component.type": "crosscutting-service",
+            "component.subtype": "message-broker",
+            "messaging.system": "rabbitmq",
         }
     )
 
@@ -85,47 +88,67 @@ def main() -> None:
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    queue_depth_gauge = meter.create_gauge(
-        name="rabbitmq_queue_depth",
-        description="Number of messages currently waiting in the queue.",
-        unit="1",
-    )
-    publish_counter = meter.create_counter(
-        name="rabbitmq_messages_published_total",
+    # Traffic
+    publish_messages = meter.create_counter(
+        name="messaging.publish.messages",
         description="Total messages published to the broker.",
-        unit="1",
+        unit="{message}",
     )
-    consume_counter = meter.create_counter(
-        name="rabbitmq_messages_consumed_total",
+    process_messages = meter.create_counter(
+        name="messaging.process.messages",
         description="Total messages consumed from the broker.",
-        unit="1",
+        unit="{message}",
     )
-    connections_gauge = meter.create_gauge(
-        name="rabbitmq_active_connections",
-        description="Number of active AMQP connections.",
-        unit="1",
+    # Saturation
+    queue_depth = meter.create_gauge(
+        name="messaging.queue.depth",
+        description="Number of messages currently waiting in the queue.",
+        unit="{message}",
+    )
+    consumer_lag = meter.create_gauge(
+        name="messaging.consumer.lag",
+        description="Consumer lag in number of messages.",
+        unit="{message}",
+    )
+    consumer_lag_seconds = meter.create_gauge(
+        name="messaging.consumer.lag_seconds",
+        description="Consumer lag in seconds.",
+        unit="s",
+    )
+    # Latency
+    publish_duration = meter.create_histogram(
+        name="messaging.publish.duration",
+        description="Time to publish a message.",
+        unit="s",
+    )
+    process_duration = meter.create_histogram(
+        name="messaging.process.duration",
+        description="Time to process a consumed message.",
+        unit="s",
     )
 
     iteration = 0
     try:
         while not stop_requested:
             iteration += 1
-            connections = random.randint(5, 40)
-            connections_gauge.set(connections, {"loop.iteration": iteration})
-
             for queue in QUEUE_NAMES:
                 depth = random.randint(0, 500)
                 published = random.randint(10, 200)
                 consumed = max(0, published - random.randint(0, 30))
-                attributes = {
-                    "queue.name": queue,
-                    "loop.iteration": iteration,
-                }
+                lag_msgs = max(0, depth - consumed)
+                lag_s = round(lag_msgs * random.uniform(0.01, 0.1), 2)
+                pub_dur = round(random.uniform(0.001, 0.05), 4)
+                proc_dur = round(random.uniform(0.002, 0.08), 4)
+                attrs = {"messaging.destination.name": queue}
 
-                with tracer.start_as_current_span("rabbitmq.sample", attributes=attributes):
-                    queue_depth_gauge.set(depth, attributes)
-                    publish_counter.add(published, attributes)
-                    consume_counter.add(consumed, attributes)
+                with tracer.start_as_current_span("rabbitmq.sample", attributes=attrs):
+                    queue_depth.set(depth, attrs)
+                    publish_messages.add(published, attrs)
+                    process_messages.add(consumed, attrs)
+                    consumer_lag.set(lag_msgs, attrs)
+                    consumer_lag_seconds.set(lag_s, attrs)
+                    publish_duration.record(pub_dur, attrs)
+                    process_duration.record(proc_dur, attrs)
 
                 logger.info(
                     "Sampled RabbitMQ queue",
@@ -134,7 +157,7 @@ def main() -> None:
                         "depth": depth,
                         "published": published,
                         "consumed": consumed,
-                        "connections": connections,
+                        "consumer_lag": lag_msgs,
                     },
                 )
 

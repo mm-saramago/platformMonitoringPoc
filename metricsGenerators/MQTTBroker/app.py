@@ -19,7 +19,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
 SERVICE_NAME = "mqtt-broker"
-LAYER = "infrastructure"
+TOPICS = ["trains/telemetry", "trains/commands", "trains/status"]
 INTERVAL_SECONDS = 10
 
 
@@ -37,8 +37,12 @@ def configure_telemetry():
         {
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
+            "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": LAYER,
+            "component.layer": "infrastructure",
+            "component.type": "crosscutting-service",
+            "component.subtype": "message-broker",
+            "messaging.system": "mqtt",
         }
     )
 
@@ -84,53 +88,70 @@ def main() -> None:
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    connected_clients_gauge = meter.create_gauge(
-        name="mqtt_broker_connected_clients",
-        description="Number of MQTT clients currently connected to the broker.",
-        unit="1",
-    )
-    messages_received_counter = meter.create_counter(
-        name="mqtt_broker_messages_received_total",
+    # Traffic
+    publish_messages = meter.create_counter(
+        name="messaging.publish.messages",
         description="Total MQTT messages received by the broker.",
-        unit="1",
+        unit="{message}",
     )
-    messages_sent_counter = meter.create_counter(
-        name="mqtt_broker_messages_sent_total",
+    process_messages = meter.create_counter(
+        name="messaging.process.messages",
         description="Total MQTT messages forwarded to subscribers.",
-        unit="1",
+        unit="{message}",
     )
-    dropped_counter = meter.create_counter(
-        name="mqtt_broker_messages_dropped_total",
-        description="MQTT messages dropped because of QoS or backpressure.",
-        unit="1",
+    # Saturation
+    queue_depth = meter.create_gauge(
+        name="messaging.queue.depth",
+        description="Messages buffered in the broker pending delivery.",
+        unit="{message}",
+    )
+    consumer_lag = meter.create_gauge(
+        name="messaging.consumer.lag",
+        description="Consumer lag in number of messages.",
+        unit="{message}",
+    )
+    # Latency
+    publish_duration = meter.create_histogram(
+        name="messaging.publish.duration",
+        description="Time to receive and store a published message.",
+        unit="s",
+    )
+    process_duration = meter.create_histogram(
+        name="messaging.process.duration",
+        description="Time to deliver a message to a subscriber.",
+        unit="s",
     )
 
     iteration = 0
     try:
         while not stop_requested:
             iteration += 1
-            clients = random.randint(20, 200)
-            received = random.randint(50, 500)
-            sent = max(0, received - random.randint(0, 20))
-            dropped = random.randint(0, 5)
-            attributes = {"loop.iteration": iteration}
+            for topic in TOPICS:
+                received = random.randint(50, 500)
+                sent = max(0, received - random.randint(0, 20))
+                depth = random.randint(0, 50)
+                lag = random.randint(0, 30)
+                pub_dur = round(random.uniform(0.0005, 0.02), 4)
+                proc_dur = round(random.uniform(0.001, 0.03), 4)
+                attrs = {"messaging.destination.name": topic}
 
-            with tracer.start_as_current_span("mqtt_broker.sample", attributes=attributes):
-                connected_clients_gauge.set(clients, attributes)
-                messages_received_counter.add(received, attributes)
-                messages_sent_counter.add(sent, attributes)
-                if dropped:
-                    dropped_counter.add(dropped, attributes)
+                with tracer.start_as_current_span("mqtt_broker.sample", attributes=attrs):
+                    publish_messages.add(received, attrs)
+                    process_messages.add(sent, attrs)
+                    queue_depth.set(depth, attrs)
+                    consumer_lag.set(lag, attrs)
+                    publish_duration.record(pub_dur, attrs)
+                    process_duration.record(proc_dur, attrs)
 
-            logger.info(
-                "Sampled MQTT broker activity",
-                extra={
-                    "connected_clients": clients,
-                    "messages_received": received,
-                    "messages_sent": sent,
-                    "messages_dropped": dropped,
-                },
-            )
+                logger.info(
+                    "Sampled MQTT broker activity",
+                    extra={
+                        "topic": topic,
+                        "messages_received": received,
+                        "messages_sent": sent,
+                        "queue_depth": depth,
+                    },
+                )
 
             for _ in range(INTERVAL_SECONDS):
                 if stop_requested:

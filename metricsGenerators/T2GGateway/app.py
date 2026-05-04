@@ -19,7 +19,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
 SERVICE_NAME = "t2g-gateway"
-LAYER = "crosscutting"
 INTERVAL_SECONDS = 10
 
 
@@ -37,8 +36,13 @@ def configure_telemetry():
         {
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
+            "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": LAYER,
+            "component.layer": "crosscutting",
+            "component.type": "crosscutting-service",
+            "component.subtype": "api-gateway",
+            "platform.feature": "infrastructure",
+            "service.location": "wayside",
         }
     )
 
@@ -84,19 +88,46 @@ def main() -> None:
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    messages_counter = meter.create_counter(
-        name="t2g_gateway_messages_total",
-        description="Total messages routed by the train-to-ground gateway.",
+    # Gateway-specific (Latency / Saturation / Errors)
+    routing_duration = meter.create_histogram(
+        name="gateway.request.routing.duration",
+        description="Latency of routing a message through the gateway.",
+        unit="s",
+    )
+    connections_active = meter.create_gauge(
+        name="gateway.connections.active",
+        description="Number of train connections currently bridged.",
+        unit="{connection}",
+    )
+    rate_limit_exceeded = meter.create_counter(
+        name="gateway.rate_limit.exceeded",
+        description="Requests rejected by rate limiting.",
         unit="1",
     )
-    latency_histogram = meter.create_histogram(
-        name="t2g_gateway_route_duration_ms",
-        description="Latency of routing a message through the gateway.",
-        unit="ms",
+    # Standard service metrics
+    http_duration = meter.create_histogram(
+        name="http.server.request.duration",
+        description="Duration of HTTP server requests.",
+        unit="s",
     )
-    active_connections_gauge = meter.create_gauge(
-        name="t2g_gateway_active_train_connections",
-        description="Number of train connections currently bridged by the gateway.",
+    active_requests = meter.create_gauge(
+        name="http.server.active_requests",
+        description="Number of active HTTP requests.",
+        unit="{request}",
+    )
+    cpu_usage = meter.create_gauge(
+        name="process.cpu.usage",
+        description="CPU usage of the service process.",
+        unit="1",
+    )
+    memory_usage = meter.create_gauge(
+        name="process.memory.usage",
+        description="Memory usage of the service process.",
+        unit="By",
+    )
+    dependency_up = meter.create_gauge(
+        name="service.dependency.up",
+        description="Health state of service dependencies (1=up, 0=down).",
         unit="1",
     )
 
@@ -106,26 +137,34 @@ def main() -> None:
             iteration += 1
             train_id = f"train-{random.randint(1, 50):03d}"
             direction = random.choice(["uplink", "downlink"])
-            duration_ms = round(random.uniform(5.0, 120.0), 2)
+            route_dur_s = round(random.uniform(0.005, 0.12), 4)
+            http_dur_s = round(route_dur_s + random.uniform(0.001, 0.01), 4)
             success = random.random() > 0.05
             status = "ok" if success else "failed"
-            active_connections = random.randint(10, 60)
+            active_conn = random.randint(10, 60)
+            rate_limited = random.random() < 0.02
 
-            attributes = {
+            attrs = {
                 "train.id": train_id,
                 "route.direction": direction,
                 "route.status": status,
-                "loop.iteration": iteration,
             }
 
-            with tracer.start_as_current_span("t2g_gateway.route", attributes=attributes) as span:
-                time.sleep(duration_ms / 1000)
-                span.set_attribute("route.duration_ms", duration_ms)
+            with tracer.start_as_current_span("t2g_gateway.route", attributes=attrs) as span:
+                time.sleep(route_dur_s)
+                span.set_attribute("route.duration_s", route_dur_s)
                 span.set_attribute("route.success", success)
 
-            messages_counter.add(1, attributes)
-            latency_histogram.record(duration_ms, attributes)
-            active_connections_gauge.set(active_connections, {"loop.iteration": iteration})
+            routing_duration.record(route_dur_s, attrs)
+            http_duration.record(http_dur_s, attrs)
+            connections_active.set(active_conn)
+            active_requests.set(random.randint(1, 20))
+            cpu_usage.set(round(random.uniform(0.05, 0.45), 4))
+            memory_usage.set(random.randint(200_000_000, 800_000_000))
+            dependency_up.set(1 if random.random() > 0.02 else 0, {"dependency.name": "rabbitmq"})
+
+            if rate_limited:
+                rate_limit_exceeded.add(1, {"train.id": train_id})
 
             logger.info(
                 "Routed train-to-ground message",
@@ -133,8 +172,8 @@ def main() -> None:
                     "train_id": train_id,
                     "direction": direction,
                     "status": status,
-                    "duration_ms": duration_ms,
-                    "active_connections": active_connections,
+                    "duration_s": route_dur_s,
+                    "active_connections": active_conn,
                 },
             )
 

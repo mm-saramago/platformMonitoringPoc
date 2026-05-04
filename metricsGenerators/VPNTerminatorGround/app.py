@@ -19,7 +19,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
 SERVICE_NAME = "vpn-terminator-ground"
-LAYER = "infrastructure"
 INTERVAL_SECONDS = 10
 
 
@@ -37,8 +36,14 @@ def configure_telemetry():
         {
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
+            "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": LAYER,
+            "component.layer": "infrastructure",
+            "component.type": "watchdog",
+            "watchdog.target": "vpn-tunnel",
+            "watchdog.target.category": "network",
+            "watchdog.check.type": "probe",
+            "service.location": "wayside",
         }
     )
 
@@ -84,47 +89,98 @@ def main() -> None:
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    active_tunnels_gauge = meter.create_gauge(
-        name="vpn_terminator_active_tunnels",
+    # Watchdog metrics
+    check_health = meter.create_gauge(
+        name="watchdog.check.health",
+        description="Health state from the last check (1=healthy, 0=unhealthy).",
+        unit="1",
+    )
+    check_duration = meter.create_histogram(
+        name="watchdog.check.duration",
+        description="Duration of the watchdog health check.",
+        unit="s",
+    )
+    consecutive_failures = meter.create_gauge(
+        name="watchdog.consecutive_failures",
+        description="Number of consecutive failed checks.",
+        unit="{failure}",
+    )
+    last_check_ts = meter.create_gauge(
+        name="watchdog.last_check.timestamp",
+        description="Unix timestamp of the last check.",
+        unit="s",
+    )
+    recovery_count = meter.create_counter(
+        name="watchdog.recovery.count",
+        description="Total recovery events observed.",
+        unit="1",
+    )
+    failover_triggered = meter.create_counter(
+        name="watchdog.failover.triggered",
+        description="Total failover events triggered.",
+        unit="1",
+    )
+    packet_loss = meter.create_gauge(
+        name="watchdog.packet.loss",
+        description="Observed packet loss percentage.",
+        unit="%",
+    )
+    tcp_conn_duration = meter.create_histogram(
+        name="watchdog.tcp.connection.duration",
+        description="Duration of TCP connection probes.",
+        unit="s",
+    )
+    # Supplementary
+    active_tunnels = meter.create_gauge(
+        name="vpn.terminator.active_tunnels",
         description="Number of VPN tunnels currently terminated on the ground.",
-        unit="1",
+        unit="{tunnel}",
     )
-    throughput_gauge = meter.create_gauge(
-        name="vpn_terminator_throughput_mbps",
+    throughput_mbps = meter.create_gauge(
+        name="vpn.terminator.throughput_mbps",
         description="Aggregate throughput across all VPN tunnels in Mbps.",
-        unit="Mbit/s",
-    )
-    handshake_counter = meter.create_counter(
-        name="vpn_terminator_handshakes_total",
-        description="Total VPN handshake attempts handled by the terminator.",
-        unit="1",
+        unit="{Mbit/s}",
     )
 
+    fail_streak = 0
     iteration = 0
     try:
         while not stop_requested:
             iteration += 1
             tunnels = random.randint(20, 80)
             throughput = round(random.uniform(50.0, 800.0), 2)
-            handshakes = random.randint(1, 10)
-            handshake_status = random.choices(["success", "failed"], weights=[9, 1])[0]
-            attributes = {
-                "handshake.status": handshake_status,
-                "loop.iteration": iteration,
-            }
+            healthy = random.random() > 0.08
+            dur = round(random.uniform(0.01, 0.20), 4)
+            tcp_dur = round(random.uniform(0.005, 0.15), 4)
+            loss = round(random.uniform(0.0, 5.0), 2) if not healthy else round(random.uniform(0.0, 0.5), 2)
 
-            with tracer.start_as_current_span("vpn_terminator.sample", attributes=attributes):
-                active_tunnels_gauge.set(tunnels, {"loop.iteration": iteration})
-                throughput_gauge.set(throughput, {"loop.iteration": iteration})
-                handshake_counter.add(handshakes, attributes)
+            with tracer.start_as_current_span("vpn_terminator.sample"):
+                check_duration.record(dur)
+                tcp_conn_duration.record(tcp_dur)
+                check_health.set(1 if healthy else 0)
+                last_check_ts.set(time.time())
+                packet_loss.set(loss)
+                active_tunnels.set(tunnels)
+                throughput_mbps.set(throughput)
+
+                if healthy:
+                    if fail_streak > 0:
+                        recovery_count.add(1)
+                    fail_streak = 0
+                else:
+                    fail_streak += 1
+                    if fail_streak >= 3 and random.random() < 0.3:
+                        failover_triggered.add(1)
+
+                consecutive_failures.set(fail_streak)
 
             logger.info(
                 "Sampled VPN terminator state",
                 extra={
                     "active_tunnels": tunnels,
                     "throughput_mbps": throughput,
-                    "handshakes": handshakes,
-                    "handshake_status": handshake_status,
+                    "healthy": healthy,
+                    "packet_loss_pct": loss,
                 },
             )
 
