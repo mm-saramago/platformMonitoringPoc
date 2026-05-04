@@ -1,0 +1,275 @@
+<mxfile host="Electron" agent="draw.io" pages="3">
+  <diagram id="architecture" name="Architecture &amp; Data Flow">
+    <mxGraphModel dx="3312" dy="1029" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1" value="Platform Monitoring POC - Architecture" vertex="1">
+          <mxGeometry height="40" width="400" x="500" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-group" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontStyle=1;fontSize=12;arcSize=8" value="Metric Generators (Python)" vertex="1">
+          <mxGeometry height="180" width="1690" x="-90" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center" value="RemoteWakeupAPI&#xa;(Microservice)&#xa;&#xa;http.server.request.duration&#xa;service.dependency.up&#xa;business.transaction.count" vertex="1">
+          <mxGeometry height="130" width="180" x="110" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-svc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center" value="RemoteWakeupService&#xa;(Train-Side Onboard)&#xa;&#xa;vehicle.connectivity.state&#xa;vehicle.heartbeat.lag&#xa;vehicle.message.backlog" vertex="1">
+          <mxGeometry height="130" width="180" x="300" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-k8s" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center" value="K8sNode&#xa;(Watchdog)&#xa;&#xa;watchdog.check.health&#xa;process.cpu.usage&#xa;process.memory.usage" vertex="1">
+          <mxGeometry height="130" width="160" x="500" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-t2g" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center" value="T2GGateway&#xa;(API Gateway)&#xa;&#xa;gateway.request.routing.duration&#xa;service.dependency.up&#xa;gateway.connections.active" vertex="1">
+          <mxGeometry height="130" width="180" x="680" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-rmq" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center" value="RabbitMQ&#xa;(Message Broker)&#xa;&#xa;messaging.queue.depth&#xa;messaging.consumer.lag&#xa;messaging.publish.duration" vertex="1">
+          <mxGeometry height="130" width="170" x="880" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-mqtt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center" value="MQTTBroker&#xa;(Message Broker)&#xa;&#xa;messaging.queue.depth&#xa;messaging.consumer.lag&#xa;messaging.publish.messages" vertex="1">
+          <mxGeometry height="130" width="170" x="1070" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-vpnt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center" value="VPNTerminator&#xa;Ground (Watchdog)&#xa;&#xa;watchdog.check.health&#xa;watchdog.packet.loss&#xa;vpn.terminator.active_tunnels" vertex="1">
+          <mxGeometry height="130" width="170" x="1260" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-vpnm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=center" value="VPNMonitor&#xa;(Watchdog - Onboard)&#xa;&#xa;watchdog.check.health&#xa;watchdog.packet.loss&#xa;watchdog.check.duration" vertex="1">
+          <mxGeometry height="130" width="170" x="-80" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gen-vpnm2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=center" value="VPNMonitor&#xa;(Watchdog - Onboard)&#xa;&#xa;watchdog.check.health&#xa;watchdog.packet.loss" vertex="1">
+          <mxGeometry height="130" width="130" x="1440" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="otel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11" value="OpenTelemetry Collector&#xa;(OTLP gRPC :4317)&#xa;&#xa;Receives: metrics, logs, traces&#xa;Exports to: Prometheus, Loki, Tempo" vertex="1">
+          <mxGeometry height="100" width="280" x="570" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-gen-otel" edge="1" parent="1" source="gen-group" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#b85450" target="otel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-label1" connectable="0" parent="arrow-gen-otel" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10" value="OTLP gRPC&#xa;(metrics + logs + traces)" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry" />
+        </mxCell>
+        <mxCell id="prometheus" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11" value="Prometheus&#xa;:9090&#xa;&#xa;Metrics storage&#xa;PromQL queries" vertex="1">
+          <mxGeometry height="100" width="180" x="320" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="loki" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11" value="Loki&#xa;:3100&#xa;&#xa;Log aggregation&#xa;LogQL queries" vertex="1">
+          <mxGeometry height="100" width="180" x="620" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="tempo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11" value="Tempo&#xa;:3200&#xa;&#xa;Distributed tracing&#xa;TraceQL queries" vertex="1">
+          <mxGeometry height="100" width="180" x="920" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-otel-prom" edge="1" parent="1" source="otel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#666666" target="prometheus">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-otel-loki" edge="1" parent="1" source="otel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#666666" target="loki">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-otel-tempo" edge="1" parent="1" source="otel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.75;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#666666" target="tempo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="grafana" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF8C00;strokeColor=#CC7000;fontColor=#ffffff;fontStyle=1;fontSize=13" value="Grafana :3000&#xa;&#xa;Dashboards | Alerting | Explore" vertex="1">
+          <mxGeometry height="80" width="420" x="500" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-prom-graf" edge="1" parent="1" source="prometheus" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;entryX=0.25;entryY=0;strokeWidth=2;strokeColor=#FF8C00" target="grafana">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-loki-graf" edge="1" parent="1" source="loki" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#FF8C00" target="grafana">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-tempo-graf" edge="1" parent="1" source="tempo" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;entryX=0.75;entryY=0;strokeWidth=2;strokeColor=#FF8C00" target="grafana">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="dashboard-hierarchy" name="Dashboard Hierarchy">
+    <mxGraphModel dx="1417" dy="852" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title2" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1" value="Dashboard Drill-Down Hierarchy" vertex="1">
+          <mxGeometry height="40" width="360" x="450" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="fleet" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a237e;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=1;fontSize=12" value="Fleet Dashboard&#xa;&#xa;Shows: Feature health + Infrastructure health&#xa;Rollup: average of child components" vertex="1">
+          <mxGeometry height="80" width="360" x="450" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="feature" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1b5e20;strokeColor=#2e7d32;fontColor=#ffffff;fontStyle=1;fontSize=11" value="Feature - Remote Wakeup&#xa;&#xa;Shows: API health + Vehicle Service health&#xa;Rollup: per-component dependency/connectivity" vertex="1">
+          <mxGeometry height="80" width="340" x="140" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="crosscut" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#bf360c;fontColor=#ffffff;fontStyle=1;fontSize=11" value="Crosscutting Infrastructure&#xa;&#xa;Shows: 6 infra component health tiles&#xa;Rollup: watchdog health / queue depth / deps" vertex="1">
+          <mxGeometry height="80" width="340" x="780" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-fleet-feat" edge="1" parent="1" source="fleet" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#2e7d32" target="feature">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-fleet-cross" edge="1" parent="1" source="fleet" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.75;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#bf360c" target="crosscut">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="comp-api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10" value="Component:&#xa;Remote Wakeup API&#xa;&#xa;CPU, Memory, Latency&#xa;Dependency health&#xa;Active requests" vertex="1">
+          <mxGeometry height="110" width="180" x="80" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="comp-svc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10" value="Component:&#xa;Remote Wakeup Service&#xa;&#xa;Connectivity state&#xa;Heartbeat lag&#xa;Message backlog" vertex="1">
+          <mxGeometry height="110" width="180" x="300" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-feat-api" edge="1" parent="1" source="feature" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.3;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#82b366" target="comp-api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-feat-svc" edge="1" parent="1" source="feature" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.7;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#82b366" target="comp-svc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="infra-k8s" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9" value="K8s Node&#xa;&#xa;watchdog.check.health&#xa;CPU / Memory&#xa;Pods running" vertex="1">
+          <mxGeometry height="100" width="120" x="560" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="infra-t2g" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9" value="T2G Gateway&#xa;&#xa;Routing duration&#xa;Active connections&#xa;Dependency up" vertex="1">
+          <mxGeometry height="100" width="120" x="700" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="infra-rmq" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9" value="RabbitMQ&#xa;&#xa;Queue depth&#xa;Consumer lag&#xa;Publish duration" vertex="1">
+          <mxGeometry height="100" width="120" x="840" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="infra-mqtt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9" value="MQTT Broker&#xa;&#xa;Queue depth&#xa;Consumer lag&#xa;Publish messages" vertex="1">
+          <mxGeometry height="100" width="120" x="980" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="infra-vpnt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9" value="VPN Terminator&#xa;&#xa;Health check&#xa;Packet loss&#xa;Active tunnels" vertex="1">
+          <mxGeometry height="100" width="120" x="1120" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="infra-vpnm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9" value="VPN Monitor&#xa;&#xa;Health check&#xa;Packet loss&#xa;RTT per train" vertex="1">
+          <mxGeometry height="100" width="120" x="1260" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-c-k8s" edge="1" parent="1" source="crosscut" style="rounded=1;exitX=0.1;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#d6b656" target="infra-k8s">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-c-t2g" edge="1" parent="1" source="crosscut" style="rounded=1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#d6b656" target="infra-t2g">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-c-rmq" edge="1" parent="1" source="crosscut" style="rounded=1;exitX=0.4;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#d6b656" target="infra-rmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-c-mqtt" edge="1" parent="1" source="crosscut" style="rounded=1;exitX=0.6;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#d6b656" target="infra-mqtt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-c-vpnt" edge="1" parent="1" source="crosscut" style="rounded=1;exitX=0.8;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#d6b656" target="infra-vpnt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-c-vpnm" edge="1" parent="1" source="crosscut" style="rounded=1;exitX=0.95;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#9673a6" target="infra-vpnm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1" value="" vertex="1">
+          <mxGeometry height="140" width="400" x="80" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontStyle=1" value="Health States" vertex="1">
+          <mxGeometry height="20" width="120" x="100" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-green" parent="1" style="rounded=1;fillColor=#00C853;strokeColor=none" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="100" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-green-t" parent="1" style="text;html=1;align=left;fontSize=10" value="HEALTHY (value = 1): All checks pass" vertex="1">
+          <mxGeometry height="20" width="300" x="130" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-orange" parent="1" style="rounded=1;fillColor=#FF9800;strokeColor=none" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="100" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-orange-t" parent="1" style="text;html=1;align=left;fontSize=10" value="DEGRADED (value = 0.5): Partial failure" vertex="1">
+          <mxGeometry height="20" width="300" x="130" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-red" parent="1" style="rounded=1;fillColor=#F44336;strokeColor=none" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="100" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-red-t" parent="1" style="text;html=1;align=left;fontSize=10" value="UNHEALTHY (value = 0): Component down" vertex="1">
+          <mxGeometry height="20" width="300" x="130" y="640" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="cascading-failure" name="Cascading Failure Scenario">
+    <mxGraphModel dx="1417" dy="852" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title3" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1" value="Error Scenario: Cascading Infrastructure Failure" vertex="1">
+          <mxGeometry height="40" width="500" x="380" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];strokeColor=none;fillColor=none;fontSize=12;fontColor=#d32f2f;fontStyle=2" value="Root cause: Disk full on wayside-node-1 (/dev/sda1 100%)" vertex="1">
+          <mxGeometry height="30" width="420" x="420" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="root-k8s" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f44336;strokeColor=#d32f2f;fontColor=#ffffff;fontStyle=1;fontSize=11" value="K8s Node (wayside-node-1)&#xa;ROOT CAUSE&#xa;&#xa;CPU: 95-99%  |  Memory: 96-100%&#xa;Health: 0  |  Failures: 10+&#xa;Disk: /dev/sda1 = 100% FULL" vertex="1">
+          <mxGeometry height="110" width="280" x="490" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="l2-label" parent="1" style="text;html=1;align=center;fontSize=11;fontStyle=3;fontColor=#e65100" value="Direct Impact (I/O stalled)" vertex="1">
+          <mxGeometry height="20" width="200" x="540" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="impact-rmq" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff5722;strokeColor=#e64a19;fontColor=#ffffff;fontSize=10" value="RabbitMQ&#xa;&#xa;Queue depth: 3K-15K&#xa;Consumers stalled&#xa;I/O blocked" vertex="1">
+          <mxGeometry height="100" width="160" x="200" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="impact-mqtt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff5722;strokeColor=#e64a19;fontColor=#ffffff;fontSize=10" value="MQTT Broker&#xa;&#xa;Queue depth: 1.5K-8K&#xa;Delivery stalled&#xa;Topics backing up" vertex="1">
+          <mxGeometry height="100" width="160" x="400" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="impact-vpnt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff5722;strokeColor=#e64a19;fontColor=#ffffff;fontSize=10" value="VPN Terminator&#xa;&#xa;Health: 0&#xa;Packet loss: 15-40%&#xa;Tunnels dropping" vertex="1">
+          <mxGeometry height="100" width="160" x="600" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="impact-t2g" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff5722;strokeColor=#e64a19;fontColor=#ffffff;fontSize=10" value="T2G Gateway&#xa;&#xa;Dep rabbitmq: DOWN&#xa;Rate limiting triggered&#xa;Connections dropping" vertex="1">
+          <mxGeometry height="100" width="170" x="800" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-r-rmq" edge="1" parent="1" source="root-k8s" style="rounded=1;exitX=0.2;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#d32f2f" target="impact-rmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-r-mqtt" edge="1" parent="1" source="root-k8s" style="rounded=1;exitX=0.4;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#d32f2f" target="impact-mqtt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-r-vpnt" edge="1" parent="1" source="root-k8s" style="rounded=1;exitX=0.6;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#d32f2f" target="impact-vpnt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-r-t2g" edge="1" parent="1" source="root-k8s" style="rounded=1;exitX=0.8;exitY=1;entryX=0.5;entryY=0;strokeWidth=2;strokeColor=#d32f2f" target="impact-t2g">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l3-label" parent="1" style="text;html=1;align=center;fontSize=11;fontStyle=3;fontColor=#e65100" value="Service Impact (connectivity lost)" vertex="1">
+          <mxGeometry height="20" width="230" x="520" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="impact-vpnm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff7043;strokeColor=#e64a19;fontColor=#ffffff;fontSize=10" value="VPN Monitor (Onboard)&#xa;&#xa;ALL trains OFFLINE&#xa;Packet loss: 30-60%&#xa;Probe timeouts" vertex="1">
+          <mxGeometry height="100" width="170" x="300" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="impact-api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff7043;strokeColor=#e64a19;fontColor=#ffffff;fontSize=10" value="Remote Wakeup API&#xa;&#xa;Dep rabbitmq: DOWN&#xa;Latency: 3-15s&#xa;Request backlog: 100" vertex="1">
+          <mxGeometry height="100" width="170" x="520" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="impact-svc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff7043;strokeColor=#e64a19;fontColor=#ffffff;fontSize=10" value="Remote Wakeup Service&#xa;&#xa;ALL trains OFFLINE&#xa;Heartbeat lag: 300s+&#xa;Backlog: 500 messages" vertex="1">
+          <mxGeometry height="100" width="180" x="740" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-vpnt-vpnm" edge="1" parent="1" source="impact-vpnt" style="rounded=1;exitX=0.3;exitY=1;entryX=0.5;entryY=0;strokeWidth=1.5;strokeColor=#e64a19;dashed=1" target="impact-vpnm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-rmq-api" edge="1" parent="1" source="impact-rmq" style="rounded=1;exitX=0.7;exitY=1;entryX=0.3;entryY=0;strokeWidth=1.5;strokeColor=#e64a19;dashed=1" target="impact-api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-t2g-api" edge="1" parent="1" source="impact-t2g" style="rounded=1;exitX=0.3;exitY=1;entryX=0.7;entryY=0;strokeWidth=1.5;strokeColor=#e64a19;dashed=1" target="impact-api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-mqtt-svc" edge="1" parent="1" source="impact-mqtt" style="rounded=1;exitX=0.7;exitY=1;entryX=0.3;entryY=0;strokeWidth=1.5;strokeColor=#e64a19;dashed=1" target="impact-svc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arr-vpnm-svc" edge="1" parent="1" source="impact-vpnm" style="rounded=1;exitX=0.8;exitY=1;entryX=0.2;entryY=0;strokeWidth=1.5;strokeColor=#e64a19;dashed=1" target="impact-svc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l4-label" parent="1" style="text;html=1;align=center;fontSize=11;fontStyle=3;fontColor=#1a237e" value="What operators see in Grafana" vertex="1">
+          <mxGeometry height="20" width="200" x="530" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="dash-fleet" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#263238;strokeColor=#37474f;fontColor=#ffffff;fontSize=10" value="Fleet Dashboard&#xa;&#xa;Remote Wakeup: UNHEALTHY (0)&#xa;Infrastructure: UNHEALTHY (0)" vertex="1">
+          <mxGeometry height="80" width="220" x="480" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="dash-cross" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#263238;strokeColor=#37474f;fontColor=#ffffff;fontSize=9" value="Crosscutting Infra&#xa;&#xa;K8s: DEGRADED (0.5)&#xa;RabbitMQ: UNHEALTHY&#xa;MQTT: UNHEALTHY&#xa;VPN Term: UNHEALTHY&#xa;VPN Mon: UNHEALTHY&#xa;T2G: UNHEALTHY" vertex="1">
+          <mxGeometry height="130" width="180" x="750" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="dash-feature" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#263238;strokeColor=#37474f;fontColor=#ffffff;fontSize=10" value="Feature Dashboard&#xa;&#xa;API: UNHEALTHY&#xa;Service: UNHEALTHY" vertex="1">
+          <mxGeometry height="80" width="170" x="260" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="drill-arrow" edge="1" parent="1" style="shape=flexArrow;endArrow=classic;startArrow=none;html=1;fillColor=#1a237e;strokeColor=#0d47a1;fontColor=#1a237e;fontSize=9" value="drill&#xa;down">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="680" as="sourcePoint" />
+            <mxPoint x="620" y="760" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dash-k8s" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b71c1c;strokeColor=#d32f2f;fontColor=#ffffff;fontSize=10;fontStyle=1" value="K8s Node Dashboard&#xa;&#xa;wayside-node-1: CRITICAL&#xa;CPU: 97%  Memory: 99%&#xa;Disk: 100% - write operations failing&#xa;&#xa;LOGS: &quot;disk full on /dev/sda1 mount=/&#xa;usage=100% - write operations failing&quot;" vertex="1">
+          <mxGeometry height="130" width="340" x="420" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="root-cause-label" parent="1" style="text;html=1;align=center;fontSize=14;fontStyle=1;fontColor=#d32f2f" value="ROOT CAUSE IDENTIFIED" vertex="1">
+          <mxGeometry height="30" width="260" x="460" y="910" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

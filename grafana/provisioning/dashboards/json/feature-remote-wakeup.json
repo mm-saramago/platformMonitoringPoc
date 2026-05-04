@@ -133,7 +133,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -235,7 +235,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"

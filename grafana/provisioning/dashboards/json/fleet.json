@@ -124,7 +124,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -163,7 +163,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "((avg(watchdog_check_health_ratio{service_name=\"k8s-node\"}) or on() vector(0)) + (min(service_dependency_up_ratio{service_name=\"t2g-gateway\"}) or on() vector(0)) + (((max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 500)) / 2 or on() vector(1)) + (((max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 500)) / 2 or on() vector(1)) + (watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"} or on() vector(0)) + (avg(watchdog_check_health_ratio{service_name=\"vpn-monitor\"}) or on() vector(0))) / 6"
+          "expr": "((avg(watchdog_check_health_ratio{service_name=\"k8s-node\"}) or on() vector(0)) + (min(service_dependency_up_ratio{service_name=\"t2g-gateway\"}) or on() vector(0)) + (((max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 500)) / 2 or on() vector(1)) + (((max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 500)) / 2 or on() vector(1)) + (avg(watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"}) or on() vector(0)) + (avg(watchdog_check_health_ratio{service_name=\"vpn-monitor\"}) or on() vector(0))) / 6"
         }
       ],
       "fieldConfig": {
@@ -238,7 +238,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"

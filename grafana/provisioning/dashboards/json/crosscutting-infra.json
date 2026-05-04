@@ -121,7 +121,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -223,7 +223,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -325,7 +325,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -427,7 +427,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -454,7 +454,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"} or on() vector(0)"
+          "expr": "avg(watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"}) or on() vector(0)"
         }
       ],
       "fieldConfig": {
@@ -529,7 +529,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -631,7 +631,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
