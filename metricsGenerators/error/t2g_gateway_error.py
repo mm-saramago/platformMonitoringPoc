@@ -18,10 +18,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
-SERVICE_NAME = "mqtt-broker"
-TOPICS = ["trains/telemetry", "trains/commands", "trains/status"]
+SERVICE_NAME = "t2g-gateway"
 INTERVAL_SECONDS = 10
-
 
 stop_requested = False
 
@@ -29,22 +27,20 @@ stop_requested = False
 def request_stop(signum, _frame) -> None:
     global stop_requested
     stop_requested = True
-    logging.getLogger(SERVICE_NAME).info("Shutdown requested", extra={"signal": signum})
 
 
 def configure_telemetry():
-    resource = Resource.create(
-        {
+    resource = Resource.create({
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
             "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": "infrastructure",
+            "component.layer": "crosscutting",
             "component.type": "crosscutting-service",
-            "component.subtype": "message-broker",
-            "messaging.system": "mqtt",
-        }
-    )
+            "component.subtype": "api-gateway",
+            "platform.feature": "infrastructure",
+            "service.location": "wayside",
+        })
 
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(
@@ -81,82 +77,57 @@ def configure_telemetry():
         logger_provider,
     )
 
-
 def main() -> None:
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    # Traffic
-    publish_messages = meter.create_counter(
-        name="messaging.publish.messages",
-        description="Total messages published to the broker.",
-        unit="{message}",
-    )
-    process_messages = meter.create_counter(
-        name="messaging.process.messages",
-        description="Total messages consumed from the broker.",
-        unit="{message}",
-    )
-    # Saturation
-    queue_depth = meter.create_gauge(
-        name="messaging.queue.depth",
-        description="Number of messages waiting in the queue.",
-        unit="{message}",
-    )
-    consumer_lag = meter.create_gauge(
-        name="messaging.consumer.lag",
-        description="Consumer lag in number of messages.",
-        unit="{message}",
-    )
-    # Latency
-    publish_duration = meter.create_histogram(
-        name="messaging.publish.duration",
-        description="Time to publish a message.",
-        unit="s",
-    )
-    process_duration = meter.create_histogram(
-        name="messaging.process.duration",
-        description="Time to process a consumed message.",
-        unit="s",
-    )
+    routing_duration = meter.create_histogram(name="gateway.request.routing.duration", description="Latency of routing a message through the gateway.", unit="s")
+    connections_active = meter.create_gauge(name="gateway.connections.active", description="Number of train connections currently bridged.", unit="{connection}")
+    rate_limit_exceeded = meter.create_counter(name="gateway.rate_limit.exceeded", description="Requests rejected by rate limiting.", unit="1")
+    http_duration = meter.create_histogram(name="http.server.request.duration", description="Duration of HTTP server requests.", unit="s")
+    active_requests = meter.create_gauge(name="http.server.active_requests", description="Number of active HTTP requests.", unit="{request}")
+    cpu_usage = meter.create_gauge(name="process.cpu.usage", description="CPU usage of the process.", unit="1")
+    memory_usage = meter.create_gauge(name="process.memory.usage", description="Memory usage of the process.", unit="By")
+    dependency_up = meter.create_gauge(name="service.dependency.up", description="Health state of service dependencies (1=up, 0=down).", unit="1")
 
+    conn_count = 45
     iteration = 0
     try:
         while not stop_requested:
             iteration += 1
-            for topic in TOPICS:
-                received = random.randint(50, 500)
-                sent = max(0, received - random.randint(0, 20))
-                depth = random.randint(0, 50)
-                lag = random.randint(0, 30)
-                pub_dur = round(random.uniform(0.0005, 0.02), 4)
-                proc_dur = round(random.uniform(0.001, 0.03), 4)
-                attrs = {"messaging.destination.name": topic}
+            conn_count = max(0, conn_count - random.randint(1, 5))
+            train_id = f"train-{random.randint(1, 50):03d}"
+            dur = round(random.uniform(2.0, 15.0), 3)
+            attrs = {"train.id": train_id, "route.direction": "uplink", "route.status": "failed"}
 
-                with tracer.start_as_current_span("mqtt_broker.sample", attributes=attrs):
-                    publish_messages.add(received, attrs)
-                    process_messages.add(sent, attrs)
-                    queue_depth.set(depth, attrs)
-                    consumer_lag.set(lag, attrs)
-                    publish_duration.record(pub_dur, attrs)
-                    process_duration.record(proc_dur, attrs)
+            with tracer.start_as_current_span("t2g_gateway.route", attributes=attrs):
+                routing_duration.record(dur, attrs)
+                http_duration.record(dur + 0.5, attrs)
 
-                logger.info(
-                    "Sampled MQTT broker activity",
-                    extra={
-                        "topic": topic,
-                        "messages_received": received,
-                        "messages_sent": sent,
-                        "queue_depth": depth,
-                    },
-                )
+            connections_active.set(conn_count)
+            active_requests.set(random.randint(30, 80))
+            rate_limit_exceeded.add(random.randint(5, 20), {"train.id": train_id})
+            cpu_usage.set(round(random.uniform(0.7, 0.95), 3))
+            memory_usage.set(random.randint(700_000_000, 950_000_000))
+            dependency_up.set(0, {"dependency.name": "rabbitmq"})
+
+            logger.error(
+                "dependency rabbitmq unreachable - message routing failing",
+                extra={"train_id": train_id, "active_connections": conn_count, "duration_s": dur},
+            )
+            logger.warning(
+                "rate limiting triggered, %d requests rejected",
+                random.randint(5, 20),
+                extra={"connections_dropping": True},
+            )
 
             for _ in range(INTERVAL_SECONDS):
                 if stop_requested:
                     break
                 time.sleep(1)
+
     finally:
         logger.info("Flushing telemetry before shutdown")
         logger_provider.force_flush()

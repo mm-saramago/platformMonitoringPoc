@@ -18,10 +18,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
-SERVICE_NAME = "mqtt-broker"
-TOPICS = ["trains/telemetry", "trains/commands", "trains/status"]
+SERVICE_NAME = "vpn-monitor"
 INTERVAL_SECONDS = 10
-
 
 stop_requested = False
 
@@ -29,22 +27,20 @@ stop_requested = False
 def request_stop(signum, _frame) -> None:
     global stop_requested
     stop_requested = True
-    logging.getLogger(SERVICE_NAME).info("Shutdown requested", extra={"signal": signum})
 
 
 def configure_telemetry():
-    resource = Resource.create(
-        {
+    resource = Resource.create({
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
             "service.version": "1.0.0",
             "deployment.environment": "local",
             "component.layer": "infrastructure",
-            "component.type": "crosscutting-service",
-            "component.subtype": "message-broker",
-            "messaging.system": "mqtt",
-        }
-    )
+            "component.type": "watchdog",
+            "watchdog.target": "vpn-tunnel",
+            "watchdog.check.type": "probe",
+            "service.location": "onboard",
+        })
 
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(
@@ -81,82 +77,52 @@ def configure_telemetry():
         logger_provider,
     )
 
-
 def main() -> None:
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    # Traffic
-    publish_messages = meter.create_counter(
-        name="messaging.publish.messages",
-        description="Total messages published to the broker.",
-        unit="{message}",
-    )
-    process_messages = meter.create_counter(
-        name="messaging.process.messages",
-        description="Total messages consumed from the broker.",
-        unit="{message}",
-    )
-    # Saturation
-    queue_depth = meter.create_gauge(
-        name="messaging.queue.depth",
-        description="Number of messages waiting in the queue.",
-        unit="{message}",
-    )
-    consumer_lag = meter.create_gauge(
-        name="messaging.consumer.lag",
-        description="Consumer lag in number of messages.",
-        unit="{message}",
-    )
-    # Latency
-    publish_duration = meter.create_histogram(
-        name="messaging.publish.duration",
-        description="Time to publish a message.",
-        unit="s",
-    )
-    process_duration = meter.create_histogram(
-        name="messaging.process.duration",
-        description="Time to process a consumed message.",
-        unit="s",
-    )
+    check_health = meter.create_gauge(name="watchdog.check.health", description="Health state from the last check (1=healthy, 0=unhealthy).", unit="1")
+    check_duration = meter.create_histogram(name="watchdog.check.duration", description="Duration of the watchdog health check.", unit="s")
+    consecutive_failures = meter.create_gauge(name="watchdog.consecutive_failures", description="Number of consecutive failed checks.", unit="{failure}")
+    last_check_ts = meter.create_gauge(name="watchdog.last_check.timestamp", description="Unix timestamp of the last check.", unit="s")
+    recovery_count = meter.create_counter(name="watchdog.recovery.count", description="Total recovery events observed.", unit="1")
+    packet_loss = meter.create_gauge(name="watchdog.packet.loss", description="Observed packet loss percentage.", unit="%")
 
+    fail_streak = {"train-001": 0, "train-002": 0}
     iteration = 0
     try:
         while not stop_requested:
             iteration += 1
-            for topic in TOPICS:
-                received = random.randint(50, 500)
-                sent = max(0, received - random.randint(0, 20))
-                depth = random.randint(0, 50)
-                lag = random.randint(0, 30)
-                pub_dur = round(random.uniform(0.0005, 0.02), 4)
-                proc_dur = round(random.uniform(0.001, 0.03), 4)
-                attrs = {"messaging.destination.name": topic}
+            for train in ["train-001", "train-002"]:
+                fail_streak[train] += 1
+                loss = round(random.uniform(30.0, 60.0), 1)
+                attrs = {"vehicle.id": train}
 
-                with tracer.start_as_current_span("mqtt_broker.sample", attributes=attrs):
-                    publish_messages.add(received, attrs)
-                    process_messages.add(sent, attrs)
-                    queue_depth.set(depth, attrs)
-                    consumer_lag.set(lag, attrs)
-                    publish_duration.record(pub_dur, attrs)
-                    process_duration.record(proc_dur, attrs)
+                with tracer.start_as_current_span("vpn_monitor.probe", attributes=attrs):
+                    check_health.set(0, attrs)
+                    check_duration.record(round(random.uniform(5.0, 30.0), 3), attrs)
+                    last_check_ts.set(time.time(), attrs)
+                    consecutive_failures.set(fail_streak[train], attrs)
+                    packet_loss.set(loss, attrs)
 
-                logger.info(
-                    "Sampled MQTT broker activity",
-                    extra={
-                        "topic": topic,
-                        "messages_received": received,
-                        "messages_sent": sent,
-                        "queue_depth": depth,
-                    },
+                logger.error(
+                    "VPN tunnel DOWN for %s - probe timeout, packet_loss=%.1f%%",
+                    train, loss,
+                    extra={"train_id": train, "tunnel_up": False, "packet_loss_pct": loss},
                 )
+
+            logger.critical(
+                "ALL trains reported OFFLINE - no VPN connectivity",
+                extra={"trains_offline": 2, "trains_total": 2},
+            )
 
             for _ in range(INTERVAL_SECONDS):
                 if stop_requested:
                     break
                 time.sleep(1)
+
     finally:
         logger.info("Flushing telemetry before shutdown")
         logger_provider.force_flush()

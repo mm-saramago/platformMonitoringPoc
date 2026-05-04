@@ -102,7 +102,7 @@ def main() -> None:
     # Saturation
     queue_depth = meter.create_gauge(
         name="messaging.queue.depth",
-        description="Number of messages currently waiting in the queue.",
+        description="Number of messages waiting in the queue.",
         unit="{message}",
     )
     consumer_lag = meter.create_gauge(

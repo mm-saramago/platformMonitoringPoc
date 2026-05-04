@@ -49,24 +49,45 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(((clamp_max(count(count_over_time(business_transaction_count_total{service_name=\"remote-wakeup-api\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(vehicle_message_sync_count_total{service_name=\"remote-wakeup-service\"}[2m])), 1)) or on() vector(0))) == bool 2"
+          "expr": "((min(service_dependency_up_ratio{service_name=\"remote-wakeup-api\"}) or on() vector(0)) + (avg(vehicle_connectivity_state_ratio{service_name=\"remote-wakeup-service\"}) or on() vector(0))) / 2"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "mappings": [
             {
-              "type": "value",
+              "type": "range",
               "options": {
-                "0": {
-                  "text": "DEGRADED",
+                "from": 0,
+                "to": 0.49,
+                "result": {
+                  "text": "UNHEALTHY",
                   "color": "red",
                   "index": 0
-                },
-                "1": {
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5,
+                "to": 0.99,
+                "result": {
+                  "text": "DEGRADED",
+                  "color": "orange",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": {
                   "text": "HEALTHY",
                   "color": "green",
-                  "index": 1
+                  "index": 2
                 }
               }
             }
@@ -79,6 +100,10 @@
                 "value": null
               },
               {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
                 "color": "green",
                 "value": 1
               }
@@ -89,7 +114,7 @@
           },
           "links": [
             {
-              "title": "Drill down to Feature",
+              "title": "Drill down",
               "url": "/d/feature-remote-wakeup",
               "targetBlank": false
             }
@@ -138,24 +163,45 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(((clamp_max(count(count_over_time(process_cpu_usage_percent{service_name=\"k8s-node\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(gateway_connections_active{service_name=\"t2g-gateway\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(messaging_queue_depth{service_name=\"rabbitmq\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(messaging_publish_messages_total{service_name=\"mqtt-broker\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"}[2m])), 1)) or on() vector(0)) + ((clamp_max(count(count_over_time(watchdog_check_health_ratio{service_name=\"vpn-monitor\"}[2m])), 1)) or on() vector(0))) == bool 6"
+          "expr": "((avg(watchdog_check_health_ratio{service_name=\"k8s-node\"}) or on() vector(0)) + (min(service_dependency_up_ratio{service_name=\"t2g-gateway\"}) or on() vector(0)) + (((max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 500)) / 2 or on() vector(1)) + (((max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 500)) / 2 or on() vector(1)) + (watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"} or on() vector(0)) + (avg(watchdog_check_health_ratio{service_name=\"vpn-monitor\"}) or on() vector(0))) / 6"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "mappings": [
             {
-              "type": "value",
+              "type": "range",
               "options": {
-                "0": {
-                  "text": "INFRA DEGRADED",
+                "from": 0,
+                "to": 0.49,
+                "result": {
+                  "text": "UNHEALTHY",
                   "color": "red",
                   "index": 0
-                },
-                "1": {
-                  "text": "INFRA HEALTHY",
-                  "color": "green",
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5,
+                "to": 0.99,
+                "result": {
+                  "text": "DEGRADED",
+                  "color": "orange",
                   "index": 1
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 2
                 }
               }
             }
@@ -168,6 +214,10 @@
                 "value": null
               },
               {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
                 "color": "green",
                 "value": 1
               }
@@ -178,7 +228,7 @@
           },
           "links": [
             {
-              "title": "Drill down to Crosscutting Infra",
+              "title": "Drill down",
               "url": "/d/crosscutting-infra",
               "targetBlank": false
             }

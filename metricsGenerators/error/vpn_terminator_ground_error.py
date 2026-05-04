@@ -18,10 +18,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
-SERVICE_NAME = "mqtt-broker"
-TOPICS = ["trains/telemetry", "trains/commands", "trains/status"]
+SERVICE_NAME = "vpn-terminator-ground"
 INTERVAL_SECONDS = 10
-
 
 stop_requested = False
 
@@ -29,22 +27,21 @@ stop_requested = False
 def request_stop(signum, _frame) -> None:
     global stop_requested
     stop_requested = True
-    logging.getLogger(SERVICE_NAME).info("Shutdown requested", extra={"signal": signum})
 
 
 def configure_telemetry():
-    resource = Resource.create(
-        {
+    resource = Resource.create({
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
             "service.version": "1.0.0",
             "deployment.environment": "local",
             "component.layer": "infrastructure",
-            "component.type": "crosscutting-service",
-            "component.subtype": "message-broker",
-            "messaging.system": "mqtt",
-        }
-    )
+            "component.type": "watchdog",
+            "watchdog.target": "vpn-tunnel",
+            "watchdog.target.category": "network",
+            "watchdog.check.type": "probe",
+            "service.location": "wayside",
+        })
 
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(
@@ -81,82 +78,61 @@ def configure_telemetry():
         logger_provider,
     )
 
-
 def main() -> None:
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    # Traffic
-    publish_messages = meter.create_counter(
-        name="messaging.publish.messages",
-        description="Total messages published to the broker.",
-        unit="{message}",
-    )
-    process_messages = meter.create_counter(
-        name="messaging.process.messages",
-        description="Total messages consumed from the broker.",
-        unit="{message}",
-    )
-    # Saturation
-    queue_depth = meter.create_gauge(
-        name="messaging.queue.depth",
-        description="Number of messages waiting in the queue.",
-        unit="{message}",
-    )
-    consumer_lag = meter.create_gauge(
-        name="messaging.consumer.lag",
-        description="Consumer lag in number of messages.",
-        unit="{message}",
-    )
-    # Latency
-    publish_duration = meter.create_histogram(
-        name="messaging.publish.duration",
-        description="Time to publish a message.",
-        unit="s",
-    )
-    process_duration = meter.create_histogram(
-        name="messaging.process.duration",
-        description="Time to process a consumed message.",
-        unit="s",
-    )
+    check_health = meter.create_gauge(name="watchdog.check.health", description="Health state from the last check (1=healthy, 0=unhealthy).", unit="1")
+    check_duration = meter.create_histogram(name="watchdog.check.duration", description="Duration of the watchdog health check.", unit="s")
+    consecutive_failures = meter.create_gauge(name="watchdog.consecutive_failures", description="Number of consecutive failed checks.", unit="{failure}")
+    last_check_ts = meter.create_gauge(name="watchdog.last_check.timestamp", description="Unix timestamp of the last check.", unit="s")
+    recovery_count = meter.create_counter(name="watchdog.recovery.count", description="Total recovery events observed.", unit="1")
+    failover_triggered = meter.create_counter(name="watchdog.failover.triggered", description="Total failover events triggered.", unit="1")
+    packet_loss = meter.create_gauge(name="watchdog.packet.loss", description="Observed packet loss percentage.", unit="%")
+    tcp_conn_duration = meter.create_histogram(name="watchdog.tcp.connection.duration", description="Duration of TCP connection probes.", unit="s")
+    active_tunnels = meter.create_gauge(name="vpn.terminator.active_tunnels", description="Number of VPN tunnels currently terminated on the ground.", unit="{tunnel}")
+    throughput_mbps = meter.create_gauge(name="vpn.terminator.throughput_mbps", description="Aggregate throughput across all VPN tunnels in Mbps.", unit="{Mbit/s}")
 
+    fail_count = 0
+    tunnels = 60
     iteration = 0
     try:
         while not stop_requested:
             iteration += 1
-            for topic in TOPICS:
-                received = random.randint(50, 500)
-                sent = max(0, received - random.randint(0, 20))
-                depth = random.randint(0, 50)
-                lag = random.randint(0, 30)
-                pub_dur = round(random.uniform(0.0005, 0.02), 4)
-                proc_dur = round(random.uniform(0.001, 0.03), 4)
-                attrs = {"messaging.destination.name": topic}
+            fail_count += 1
+            tunnels = max(0, tunnels - random.randint(2, 8))
+            loss = round(random.uniform(15.0, 40.0), 1)
 
-                with tracer.start_as_current_span("mqtt_broker.sample", attributes=attrs):
-                    publish_messages.add(received, attrs)
-                    process_messages.add(sent, attrs)
-                    queue_depth.set(depth, attrs)
-                    consumer_lag.set(lag, attrs)
-                    publish_duration.record(pub_dur, attrs)
-                    process_duration.record(proc_dur, attrs)
+            with tracer.start_as_current_span("vpn_terminator.sample"):
+                check_health.set(0)
+                check_duration.record(round(random.uniform(3.0, 10.0), 3))
+                tcp_conn_duration.record(round(random.uniform(5.0, 15.0), 3))
+                last_check_ts.set(time.time())
+                consecutive_failures.set(fail_count)
+                packet_loss.set(loss)
+                active_tunnels.set(tunnels)
+                throughput_mbps.set(round(random.uniform(1.0, 15.0), 1))
 
-                logger.info(
-                    "Sampled MQTT broker activity",
-                    extra={
-                        "topic": topic,
-                        "messages_received": received,
-                        "messages_sent": sent,
-                        "queue_depth": depth,
-                    },
-                )
+            if fail_count % 3 == 0:
+                failover_triggered.add(1)
+
+            logger.error(
+                "VPN tunnel renegotiation failed, packet_loss=%.1f%%",
+                loss,
+                extra={"active_tunnels": tunnels, "packet_loss_pct": loss, "consecutive_failures": fail_count},
+            )
+            logger.critical(
+                "ground VPN terminator degraded - tunnels dropping, throughput near zero",
+                extra={"tunnels_remaining": tunnels},
+            )
 
             for _ in range(INTERVAL_SECONDS):
                 if stop_requested:
                     break
                 time.sleep(1)
+
     finally:
         logger.info("Flushing telemetry before shutdown")
         logger_provider.force_flush()

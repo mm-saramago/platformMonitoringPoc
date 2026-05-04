@@ -110,12 +110,12 @@ def main() -> None:
     )
     cpu_usage = meter.create_gauge(
         name="process.cpu.usage",
-        description="CPU usage of the service process.",
+        description="CPU usage of the process.",
         unit="1",
     )
     memory_usage = meter.create_gauge(
         name="process.memory.usage",
-        description="Memory usage of the service process.",
+        description="Memory usage of the process.",
         unit="By",
     )
     # Errors

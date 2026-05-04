@@ -18,10 +18,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 COLLECTOR_ENDPOINT = "http://localhost:4317"
-SERVICE_NAME = "vpn-monitor"
-TRAIN_IDS = ["train-001", "train-002"]
+SERVICE_NAME = "remote-wakeup-service"
 INTERVAL_SECONDS = 10
-
 
 stop_requested = False
 
@@ -29,23 +27,21 @@ stop_requested = False
 def request_stop(signum, _frame) -> None:
     global stop_requested
     stop_requested = True
-    logging.getLogger(SERVICE_NAME).info("Shutdown requested", extra={"signal": signum})
 
 
 def configure_telemetry():
-    resource = Resource.create(
-        {
+    resource = Resource.create({
             "service.name": SERVICE_NAME,
             "service.namespace": "sample-apps",
             "service.version": "1.0.0",
             "deployment.environment": "local",
-            "component.layer": "infrastructure",
-            "component.type": "watchdog",
-            "watchdog.target": "vpn-tunnel",
-            "watchdog.check.type": "probe",
+            "component.layer": "functional",
+            "component.type": "onboard",
+            "platform.feature": "remote-wakeup",
+            "runtime.kind": "agent",
             "service.location": "onboard",
-        }
-    )
+            "vehicle.fleet": "fleet-alpha",
+        })
 
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(
@@ -82,85 +78,66 @@ def configure_telemetry():
         logger_provider,
     )
 
-
 def main() -> None:
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
 
     logger, tracer, meter, tracer_provider, meter_provider, logger_provider = configure_telemetry()
 
-    # Watchdog metrics
-    check_health = meter.create_gauge(
-        name="watchdog.check.health",
-        description="Health state from the last check (1=healthy, 0=unhealthy).",
-        unit="1",
-    )
-    check_duration = meter.create_histogram(
-        name="watchdog.check.duration",
-        description="Duration of the watchdog health check.",
-        unit="s",
-    )
-    consecutive_failures = meter.create_gauge(
-        name="watchdog.consecutive_failures",
-        description="Number of consecutive failed checks.",
-        unit="{failure}",
-    )
-    last_check_ts = meter.create_gauge(
-        name="watchdog.last_check.timestamp",
-        description="Unix timestamp of the last check.",
-        unit="s",
-    )
-    recovery_count = meter.create_counter(
-        name="watchdog.recovery.count",
-        description="Total recovery events observed.",
-        unit="1",
-    )
-    packet_loss = meter.create_gauge(
-        name="watchdog.packet.loss",
-        description="Observed packet loss percentage.",
-        unit="%",
-    )
+    heartbeat_timestamp = meter.create_gauge(name="vehicle.heartbeat.timestamp", description="Timestamp of the last heartbeat from the vehicle.", unit="s")
+    message_sync_count = meter.create_counter(name="vehicle.message.sync.count", description="Total messages synchronised from the vehicle.", unit="{message}")
+    heartbeat_lag = meter.create_gauge(name="vehicle.heartbeat.lag", description="Seconds since the last successful heartbeat.", unit="s")
+    connectivity_state = meter.create_gauge(name="vehicle.connectivity.state", description="Connectivity state of the vehicle (1=online, 0=offline).", unit="1")
+    error_count = meter.create_counter(name="vehicle.error.count", description="Total errors reported by the vehicle.", unit="1")
+    update_status = meter.create_gauge(name="vehicle.update.status", description="Software update status (0=idle, 1=pending, 2=in-progress).", unit="1")
+    message_backlog = meter.create_gauge(name="vehicle.message.backlog", description="Messages queued on the vehicle awaiting sync.", unit="{message}")
+    cpu_usage = meter.create_gauge(name="vehicle.cpu.usage", description="Vehicle CPU usage.", unit="%")
+    memory_usage = meter.create_gauge(name="vehicle.memory.usage", description="Vehicle memory usage.", unit="%")
+    storage_usage = meter.create_gauge(name="vehicle.storage.usage", description="Vehicle storage usage.", unit="%")
 
-    fail_streak = {t: 0 for t in TRAIN_IDS}
+    last_heartbeat = time.time() - 300
+    backlog = 50
     iteration = 0
     try:
         while not stop_requested:
             iteration += 1
-            for train in TRAIN_IDS:
-                up = random.random() > 0.05
-                rtt_s = round(random.uniform(0.02, 0.35), 4)
-                loss = round(random.uniform(0.0, 2.0), 2) if up else round(random.uniform(5.0, 30.0), 2)
+            backlog = min(backlog + random.randint(5, 20), 500)
+            for train in ["train-001", "train-002"]:
+                lag = time.time() - last_heartbeat
                 attrs = {"vehicle.id": train}
 
-                with tracer.start_as_current_span("vpn_monitor.probe", attributes=attrs):
-                    check_health.set(1 if up else 0, attrs)
-                    check_duration.record(rtt_s, attrs)
-                    last_check_ts.set(time.time(), attrs)
-                    packet_loss.set(loss, attrs)
+                with tracer.start_as_current_span("remote_wakeup_service.execute", attributes={"vehicle.id": train, "wakeup.status": "failed"}):
+                    pass
 
-                    if up:
-                        if fail_streak[train] > 0:
-                            recovery_count.add(1, attrs)
-                        fail_streak[train] = 0
-                    else:
-                        fail_streak[train] += 1
+                heartbeat_timestamp.set(last_heartbeat, attrs)
+                heartbeat_lag.set(round(lag, 1), attrs)
+                connectivity_state.set(0, attrs)
+                message_backlog.set(backlog, attrs)
+                message_sync_count.add(0, {"vehicle.id": train, "wakeup.status": "failed"})
+                error_count.add(random.randint(1, 5), {"vehicle.id": train, "error.type": "connectivity_lost"})
+                update_status.set(1, attrs)
 
-                    consecutive_failures.set(fail_streak[train], attrs)
+                cpu_usage.set(round(random.uniform(15.0, 30.0), 1), attrs)
+                memory_usage.set(round(random.uniform(40.0, 60.0), 1), attrs)
+                storage_usage.set(round(random.uniform(50.0, 65.0), 1), attrs)
 
-                logger.info(
-                    "Probed VPN tunnel from vehicle",
-                    extra={
-                        "train_id": train,
-                        "tunnel_up": up,
-                        "rtt_s": rtt_s,
-                        "packet_loss_pct": loss,
-                    },
+                logger.error(
+                    "heartbeat timeout for %s, lag=%.0fs - train OFFLINE",
+                    train, lag,
+                    extra={"train_id": train, "heartbeat_lag_s": round(lag, 1), "backlog": backlog},
                 )
+
+            logger.critical(
+                "ALL trains OFFLINE - no connectivity, message backlog=%d",
+                backlog,
+                extra={"trains_offline": 2, "backlog_total": backlog * 2},
+            )
 
             for _ in range(INTERVAL_SECONDS):
                 if stop_requested:
                     break
                 time.sleep(1)
+
     finally:
         logger.info("Flushing telemetry before shutdown")
         logger_provider.force_flush()

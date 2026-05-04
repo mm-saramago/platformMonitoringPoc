@@ -154,3 +154,67 @@ Supplementary: `vpn.terminator.active_tunnels`, `vpn.terminator.throughput_mbps`
 | VPNMonitor          | Watchdog (train-side)       | 6        | 6           | Full       |
 
 All generators now have **resource attributes aligned** with the tagging strategy (Chapter 7).
+
+---
+
+## Health Thresholds & Rollup Logic
+
+Health is computed per component and rolled up through the dashboard hierarchy: **Fleet -> Feature / Crosscutting Infra -> Component**.
+
+Each health indicator uses a 3-state model:
+
+| Value | State | Color | Meaning |
+|-------|-------|-------|---------|
+| 1 | HEALTHY | Green | All checks pass, metrics within normal range |
+| 0.5 | DEGRADED | Orange | Partial failure (e.g. 1 of 2 nodes down) or thresholds exceeded |
+| 0 | UNHEALTHY | Red | Component down, dependency unavailable, or critical threshold breached |
+
+### Component-Level Health Queries
+
+| Component | Health Metric | PromQL | Logic |
+|-----------|---------------|--------|-------|
+| K8s Node | `watchdog.check.health` | `avg(watchdog_check_health_ratio{service_name="k8s-node"})` | avg across nodes: 1=all healthy, 0.5=one down, 0=all down |
+| VPN Monitor | `watchdog.check.health` | `avg(watchdog_check_health_ratio{service_name="vpn-monitor"})` | avg across trains: 1=all up, 0.5=one tunnel down, 0=all down |
+| VPN Terminator | `watchdog.check.health` | `watchdog_check_health_ratio{service_name="vpn-terminator-ground"}` | single probe: 1=up, 0=down |
+| T2G Gateway | `service.dependency.up` | `min(service_dependency_up_ratio{service_name="t2g-gateway"})` | worst dependency: 0=any dep down |
+| Remote Wakeup API | `service.dependency.up` | `min(service_dependency_up_ratio{service_name="remote-wakeup-api"})` | worst dependency: 0=any dep down |
+| Remote Wakeup Service | `vehicle.connectivity.state` | `avg(vehicle_connectivity_state_ratio{service_name="remote-wakeup-service"})` | avg across trains: 0=all offline |
+| RabbitMQ | `messaging.queue.depth` | `((max(depth) < bool 2000) + (max(depth) < bool 500)) / 2` | <500=HEALTHY, 500-2000=DEGRADED, >2000=UNHEALTHY |
+| MQTT Broker | `messaging.queue.depth` | `((max(depth) < bool 2000) + (max(depth) < bool 500)) / 2` | <500=HEALTHY, 500-2000=DEGRADED, >2000=UNHEALTHY |
+
+### Messaging Queue Depth Thresholds
+
+| Range | State | Rationale |
+|-------|-------|-----------|
+| < 500 messages | HEALTHY | Normal operating backlog |
+| 500 -- 2,000 messages | DEGRADED | Consumers falling behind, investigate |
+| > 2,000 messages | UNHEALTHY | Severe backlog, consumers stalled or node I/O issue |
+
+### Dashboard Panel Thresholds (per doc.md Sections 9 & 10)
+
+| Metric | Green | Yellow/Orange | Red | Source |
+|--------|-------|---------------|-----|--------|
+| CPU usage (component) | < 85% | 85-90% | > 90% | doc.md 9.5, 10.4 |
+| Memory usage (component) | < 90% | 90-95% | > 95% | doc.md 9.5, 10.4 |
+| Watchdog consecutive failures | < 2 | 2-5 | > 5 | Operational |
+| Packet loss (VPN) | < 1% | 1-5% | > 5% | Operational |
+| Active connections (Gateway) | < 40 | 40-70 | > 70 | Capacity |
+| Request success rate (system) | >= 99.5% | 99.0-99.5% | < 99.0% | doc.md 9.2 |
+| p95 latency (system) | <= 500ms | 500ms-1s | > 1s | doc.md 9.2 |
+| Vehicle connectivity | >= 90% | 80-90% | < 80% | doc.md 9.2 |
+
+### Rollup Logic (Fleet Dashboard)
+
+| Fleet Panel | Formula | Logic |
+|-------------|---------|-------|
+| Remote Wakeup (Feature) | `(api_health + service_health) / 2` | Average of API dependency health + vehicle connectivity |
+| Crosscutting Infrastructure | `(k8s + t2g + rabbit + mqtt + vpn_term + vpn_mon) / 6` | Average of all 6 infra component healths |
+
+### Alert Severity Levels (per doc.md Section 10.2)
+
+| Severity | Response Time | Example Conditions |
+|----------|---------------|--------------------|
+| Critical (Page) | 5 minutes | System down, error budget exhausted, node disk full (>90%, 5m) |
+| High (Ticket) | 1 hour | Node memory >90% (10m), pod crash-looping (>5 restarts/15m), feature error rate >3% |
+| Medium (Ticket) | 4 hours | Node CPU >85% (15m), moderate saturation |
+| Low (Info) | Business hours | Deployment completed, capacity threshold info |
