@@ -92,22 +92,118 @@
         "allValue": ".*"
       },
       {
-        "name": "sub_component",
+        "name": "svc_microservice",
         "type": "query",
-        "label": "Sub-Component",
+        "label": "svc_microservice",
         "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
         },
         "query": {
-          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\", component_name=~\"$component\"}, service_name)",
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\", component_name=~\"$component\", component_type=\"microservice\"}, service_name)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
         "sort": 1,
-        "hide": 0,
+        "hide": 2,
         "includeAll": false,
-        "multi": true
+        "multi": true,
+        "regex": ".+"
+      },
+      {
+        "name": "svc_trainside",
+        "type": "query",
+        "label": "svc_trainside",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\", component_name=~\"$component\", component_type=\"train-side-sw\"}, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 2,
+        "includeAll": false,
+        "multi": true,
+        "regex": ".+"
+      },
+      {
+        "name": "svc_watchdog_compute",
+        "type": "query",
+        "label": "svc_watchdog_compute",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\", component_name=~\"$component\", component_type=\"non-software-monitor\", component_name=\"infrastructure-compute\"}, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 2,
+        "includeAll": false,
+        "multi": true,
+        "regex": ".+"
+      },
+      {
+        "name": "svc_watchdog_network",
+        "type": "query",
+        "label": "svc_watchdog_network",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\", component_name=~\"$component\", component_type=\"non-software-monitor\", component_name=\"infrastructure-network\"}, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 2,
+        "includeAll": false,
+        "multi": true,
+        "regex": ".+"
+      },
+      {
+        "name": "svc_gateway",
+        "type": "query",
+        "label": "svc_gateway",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\", component_name=~\"$component\", component_type=\"crosscutting-service\", component_subtype=\"api-gateway\"}, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 2,
+        "includeAll": false,
+        "multi": true,
+        "regex": ".+"
+      },
+      {
+        "name": "svc_broker",
+        "type": "query",
+        "label": "svc_broker",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\", component_name=~\"$component\", component_type=\"crosscutting-service\", component_subtype=\"message-broker\"}, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 2,
+        "includeAll": false,
+        "multi": true,
+        "regex": ".+"
       }
     ]
   },
@@ -138,7 +234,7 @@
     {
       "type": "row",
       "id": 1,
-      "title": "$sub_component",
+      "title": "$svc_microservice [Microservice]",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -146,699 +242,14 @@
         "y": 0
       },
       "collapsed": false,
-      "repeat": "sub_component",
-      "repeatDirection": "h",
-      "panels": [
-        {
-          "type": "stat",
-          "title": "Health",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 0,
-            "y": 1
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "component_health_ratio{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "mappings": [
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 0,
-                    "to": 0.49,
-                    "result": {
-                      "text": "UNHEALTHY",
-                      "color": "red",
-                      "index": 0
-                    }
-                  }
-                },
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 0.5,
-                    "to": 0.99,
-                    "result": {
-                      "text": "DEGRADED",
-                      "color": "orange",
-                      "index": 1
-                    }
-                  }
-                },
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 1,
-                    "to": 1,
-                    "result": {
-                      "text": "HEALTHY",
-                      "color": "green",
-                      "index": 2
-                    }
-                  }
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 0.5
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  }
-                ]
-              },
-              "color": {
-                "mode": "thresholds"
-              }
-            }
-          },
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "textMode": "value",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            }
-          },
-          "id": 2
-        },
-        {
-          "type": "stat",
-          "title": "HTTP Active",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 4,
-            "y": 1
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "http_server_active_requests{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {}
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            },
-            "graphMode": "none",
-            "textMode": "auto"
-          },
-          "id": 3
-        },
-        {
-          "type": "timeseries",
-          "title": "HTTP Duration (p50/p95)",
-          "gridPos": {
-            "h": 4,
-            "w": 8,
-            "x": 8,
-            "y": 1
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$sub_component\"}[5m])))",
-              "legendFormat": "p95"
-            },
-            {
-              "refId": "B",
-              "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$sub_component\"}[5m])))",
-              "legendFormat": "p50"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s"
-            }
-          },
-          "id": 4
-        },
-        {
-          "type": "stat",
-          "title": "Vehicle Connectivity",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 4,
-            "y": 5
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "vehicle_connectivity_state_ratio{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "mappings": [
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 0,
-                    "to": 0.49,
-                    "result": {
-                      "text": "UNHEALTHY",
-                      "color": "red",
-                      "index": 0
-                    }
-                  }
-                },
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 0.5,
-                    "to": 0.99,
-                    "result": {
-                      "text": "DEGRADED",
-                      "color": "orange",
-                      "index": 1
-                    }
-                  }
-                },
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 1,
-                    "to": 1,
-                    "result": {
-                      "text": "HEALTHY",
-                      "color": "green",
-                      "index": 2
-                    }
-                  }
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 0.5
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  }
-                ]
-              },
-              "color": {
-                "mode": "thresholds"
-              }
-            }
-          },
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "textMode": "value",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            }
-          },
-          "id": 5
-        },
-        {
-          "type": "gauge",
-          "title": "Heartbeat Lag",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 8,
-            "y": 5
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "vehicle_heartbeat_lag_seconds{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "min": 0,
-              "max": 60,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 15
-                  },
-                  {
-                    "color": "red",
-                    "value": 30
-                  }
-                ]
-              }
-            }
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "id": 6
-        },
-        {
-          "type": "timeseries",
-          "title": "Sync Rate (/min)",
-          "gridPos": {
-            "h": 4,
-            "w": 8,
-            "x": 12,
-            "y": 5
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "sum by (vehicle_id) (rate(vehicle_message_sync_count_total{service_name=~\"$sub_component\"}[1m])) * 60",
-              "legendFormat": "{{vehicle_id}}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {}
-          },
-          "id": 7
-        },
-        {
-          "type": "stat",
-          "title": "Watchdog Health",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 4,
-            "y": 9
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "watchdog_check_health_ratio{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "mappings": [
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 0,
-                    "to": 0.49,
-                    "result": {
-                      "text": "UNHEALTHY",
-                      "color": "red",
-                      "index": 0
-                    }
-                  }
-                },
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 0.5,
-                    "to": 0.99,
-                    "result": {
-                      "text": "DEGRADED",
-                      "color": "orange",
-                      "index": 1
-                    }
-                  }
-                },
-                {
-                  "type": "range",
-                  "options": {
-                    "from": 1,
-                    "to": 1,
-                    "result": {
-                      "text": "HEALTHY",
-                      "color": "green",
-                      "index": 2
-                    }
-                  }
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 0.5
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  }
-                ]
-              },
-              "color": {
-                "mode": "thresholds"
-              }
-            }
-          },
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "textMode": "value",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            }
-          },
-          "id": 8
-        },
-        {
-          "type": "stat",
-          "title": "Consecutive Failures",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 8,
-            "y": 9
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "watchdog_consecutive_failures{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {}
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            },
-            "graphMode": "none",
-            "textMode": "auto"
-          },
-          "id": 9
-        },
-        {
-          "type": "gauge",
-          "title": "Packet Loss %",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 12,
-            "y": 9
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "watchdog_packet_loss_percent{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percent",
-              "min": 0,
-              "max": 100,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 5
-                  },
-                  {
-                    "color": "red",
-                    "value": 20
-                  }
-                ]
-              }
-            }
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "id": 10
-        },
-        {
-          "type": "timeseries",
-          "title": "Queue Depth",
-          "gridPos": {
-            "h": 4,
-            "w": 8,
-            "x": 4,
-            "y": 13
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "messaging_queue_depth{service_name=~\"$sub_component\"}",
-              "legendFormat": "{{messaging_destination_name}}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {}
-          },
-          "id": 11
-        },
-        {
-          "type": "stat",
-          "title": "Gateway Connections",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 12,
-            "y": 13
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "gateway_connections_active{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {}
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            },
-            "graphMode": "none",
-            "textMode": "auto"
-          },
-          "id": 12
-        },
-        {
-          "type": "gauge",
-          "title": "CPU %",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 16,
-            "y": 1
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "process_cpu_usage_percent{service_name=~\"$sub_component\"}"
-            },
-            {
-              "refId": "B",
-              "expr": "vehicle_cpu_usage_percent{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percent",
-              "min": 0,
-              "max": 100,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 60
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            }
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "id": 13
-        },
-        {
-          "type": "gauge",
-          "title": "Memory %",
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 20,
-            "y": 1
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "process_memory_usage_percent{service_name=~\"$sub_component\"}"
-            },
-            {
-              "refId": "B",
-              "expr": "vehicle_memory_usage_percent{service_name=~\"$sub_component\"}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percent",
-              "min": 0,
-              "max": 100,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 60
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            }
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "id": 14
-        }
-      ]
+      "repeat": "svc_microservice"
     },
     {
       "type": "stat",
       "title": "Health",
       "gridPos": {
-        "h": 4,
-        "w": 4,
+        "h": 5,
+        "w": 3,
         "x": 0,
         "y": 1
       },
@@ -849,7 +260,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "component_health_ratio{service_name=~\"$sub_component\"}"
+          "expr": "component_health_ratio{service_name=~\"$svc_microservice\"}"
         }
       ],
       "fieldConfig": {
@@ -921,9 +332,7 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+          ]
         }
       },
       "id": 2
@@ -932,9 +341,9 @@
       "type": "stat",
       "title": "HTTP Active",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
+        "h": 5,
+        "w": 3,
+        "x": 3,
         "y": 1
       },
       "datasource": {
@@ -944,7 +353,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "http_server_active_requests{service_name=~\"$sub_component\"}"
+          "expr": "http_server_active_requests{service_name=~\"$svc_microservice\"}"
         }
       ],
       "fieldConfig": {
@@ -962,12 +371,12 @@
       "id": 3
     },
     {
-      "type": "timeseries",
-      "title": "HTTP Duration (p50/p95)",
+      "type": "stat",
+      "title": "Dep Up",
       "gridPos": {
-        "h": 4,
-        "w": 8,
-        "x": 8,
+        "h": 5,
+        "w": 3,
+        "x": 6,
         "y": 1
       },
       "datasource": {
@@ -977,39 +386,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$sub_component\"}[5m])))",
-          "legendFormat": "p95"
-        },
-        {
-          "refId": "B",
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$sub_component\"}[5m])))",
-          "legendFormat": "p50"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s"
-        }
-      },
-      "id": 4
-    },
-    {
-      "type": "stat",
-      "title": "Vehicle Connectivity",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 5
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "vehicle_connectivity_state_ratio{service_name=~\"$sub_component\"}"
+          "expr": "service_dependency_up_ratio{service_name=~\"$svc_microservice\"}"
         }
       ],
       "fieldConfig": {
@@ -1081,21 +458,19 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+          ]
         }
       },
-      "id": 5
+      "id": 4
     },
     {
-      "type": "gauge",
-      "title": "Heartbeat Lag",
+      "type": "timeseries",
+      "title": "HTTP Duration (p50/p95)",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 5
+        "h": 5,
+        "w": 7,
+        "x": 9,
+        "y": 1
       },
       "datasource": {
         "type": "prometheus",
@@ -1104,7 +479,375 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "vehicle_heartbeat_lag_seconds{service_name=~\"$sub_component\"}"
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$svc_microservice\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$svc_microservice\"}[5m])))",
+          "legendFormat": "p50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "id": 5
+    },
+    {
+      "type": "stat",
+      "title": "Business Tx/m",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 16,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(business_transaction_count_total{service_name=~\"$svc_microservice\"}[1m]))*60"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "id": 6
+    },
+    {
+      "type": "gauge",
+      "title": "CPU %",
+      "gridPos": {
+        "h": 5,
+        "w": 2,
+        "x": 19,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_cpu_usage_ratio{service_name=~\"$svc_microservice\"} * 100"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 7
+    },
+    {
+      "type": "gauge",
+      "title": "Mem",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 21,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_memory_usage_bytes{service_name=~\"$svc_microservice\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "max": 536870912,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 268435456
+              },
+              {
+                "color": "red",
+                "value": 429496729
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 8
+    },
+    {
+      "type": "row",
+      "id": 9,
+      "title": "$svc_trainside [Train-Side]",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "collapsed": false,
+      "repeat": "svc_trainside"
+    },
+    {
+      "type": "stat",
+      "title": "Health",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "component_health_ratio{service_name=~\"$svc_trainside\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0.49,
+                "result": {
+                  "text": "UNHEALTHY",
+                  "color": "red",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5,
+                "to": 0.99,
+                "result": {
+                  "text": "DEGRADED",
+                  "color": "orange",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 10
+    },
+    {
+      "type": "stat",
+      "title": "Connectivity",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 3,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "vehicle_connectivity_state_ratio{service_name=~\"$svc_trainside\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0.49,
+                "result": {
+                  "text": "UNHEALTHY",
+                  "color": "red",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5,
+                "to": 0.99,
+                "result": {
+                  "text": "DEGRADED",
+                  "color": "orange",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 11
+    },
+    {
+      "type": "gauge",
+      "title": "HB Lag",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "vehicle_heartbeat_lag_seconds{service_name=~\"$svc_trainside\"}"
         }
       ],
       "fieldConfig": {
@@ -1138,16 +881,16 @@
           ]
         }
       },
-      "id": 6
+      "id": 12
     },
     {
-      "type": "timeseries",
-      "title": "Sync Rate (/min)",
+      "type": "stat",
+      "title": "Backlog",
       "gridPos": {
-        "h": 4,
-        "w": 8,
-        "x": 12,
-        "y": 5
+        "h": 5,
+        "w": 3,
+        "x": 9,
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -1156,23 +899,56 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (vehicle_id) (rate(vehicle_message_sync_count_total{service_name=~\"$sub_component\"}[1m])) * 60",
+          "expr": "vehicle_message_backlog{service_name=~\"$svc_trainside\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "id": 13
+    },
+    {
+      "type": "timeseries",
+      "title": "Sync /min",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (vehicle_id) (rate(vehicle_message_sync_count_total{service_name=~\"$svc_trainside\"}[1m])) * 60",
           "legendFormat": "{{vehicle_id}}"
         }
       ],
       "fieldConfig": {
         "defaults": {}
       },
-      "id": 7
+      "id": 14
     },
     {
-      "type": "stat",
-      "title": "Watchdog Health",
+      "type": "gauge",
+      "title": "CPU%",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 9
+        "h": 5,
+        "w": 2,
+        "x": 18,
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -1181,7 +957,176 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "watchdog_check_health_ratio{service_name=~\"$sub_component\"}"
+          "expr": "vehicle_cpu_usage_percent{service_name=~\"$svc_trainside\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 15
+    },
+    {
+      "type": "gauge",
+      "title": "Mem%",
+      "gridPos": {
+        "h": 5,
+        "w": 2,
+        "x": 20,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "vehicle_memory_usage_percent{service_name=~\"$svc_trainside\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 16
+    },
+    {
+      "type": "gauge",
+      "title": "Stor%",
+      "gridPos": {
+        "h": 5,
+        "w": 2,
+        "x": 22,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "vehicle_storage_usage_percent{service_name=~\"$svc_trainside\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 17
+    },
+    {
+      "type": "row",
+      "id": 18,
+      "title": "$svc_watchdog_compute [Watchdog / Compute]",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "collapsed": false,
+      "repeat": "svc_watchdog_compute"
+    },
+    {
+      "type": "stat",
+      "title": "Health",
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "watchdog_check_health_ratio{service_name=~\"$svc_watchdog_compute\"}"
         }
       ],
       "fieldConfig": {
@@ -1253,21 +1198,19 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+          ]
         }
       },
-      "id": 8
+      "id": 19
     },
     {
       "type": "stat",
-      "title": "Consecutive Failures",
+      "title": "Failures",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 9
+        "h": 5,
+        "w": 3,
+        "x": 4,
+        "y": 15
       },
       "datasource": {
         "type": "prometheus",
@@ -1276,7 +1219,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "watchdog_consecutive_failures{service_name=~\"$sub_component\"}"
+          "expr": "watchdog_consecutive_failures{service_name=~\"$svc_watchdog_compute\"}"
         }
       ],
       "fieldConfig": {
@@ -1291,16 +1234,16 @@
         "graphMode": "none",
         "textMode": "auto"
       },
-      "id": 9
+      "id": 20
     },
     {
-      "type": "gauge",
-      "title": "Packet Loss %",
+      "type": "timeseries",
+      "title": "Check Duration (p50/p95)",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 9
+        "h": 5,
+        "w": 8,
+        "x": 7,
+        "y": 15
       },
       "datasource": {
         "type": "prometheus",
@@ -1309,7 +1252,39 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "watchdog_packet_loss_percent{service_name=~\"$sub_component\"}"
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(watchdog_check_duration_seconds_bucket{service_name=~\"$svc_watchdog_compute\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(watchdog_check_duration_seconds_bucket{service_name=~\"$svc_watchdog_compute\"}[5m])))",
+          "legendFormat": "p50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "id": 21
+    },
+    {
+      "type": "gauge",
+      "title": "CPU%",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 15,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_cpu_usage_percent{service_name=~\"$svc_watchdog_compute\"}"
         }
       ],
       "fieldConfig": {
@@ -1326,11 +1301,11 @@
               },
               {
                 "color": "yellow",
-                "value": 5
+                "value": 60
               },
               {
                 "color": "red",
-                "value": 20
+                "value": 80
               }
             ]
           }
@@ -1343,16 +1318,16 @@
           ]
         }
       },
-      "id": 10
+      "id": 22
     },
     {
-      "type": "timeseries",
-      "title": "Queue Depth",
+      "type": "gauge",
+      "title": "Mem%",
       "gridPos": {
-        "h": 4,
-        "w": 8,
-        "x": 4,
-        "y": 13
+        "h": 5,
+        "w": 3,
+        "x": 18,
+        "y": 15
       },
       "datasource": {
         "type": "prometheus",
@@ -1361,23 +1336,805 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "messaging_queue_depth{service_name=~\"$sub_component\"}",
+          "expr": "process_memory_usage_percent{service_name=~\"$svc_watchdog_compute\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 23
+    },
+    {
+      "type": "row",
+      "id": 24,
+      "title": "$svc_watchdog_network [Watchdog / Network]",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "collapsed": false,
+      "repeat": "svc_watchdog_network"
+    },
+    {
+      "type": "stat",
+      "title": "Health",
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 22
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "watchdog_check_health_ratio{service_name=~\"$svc_watchdog_network\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0.49,
+                "result": {
+                  "text": "UNHEALTHY",
+                  "color": "red",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5,
+                "to": 0.99,
+                "result": {
+                  "text": "DEGRADED",
+                  "color": "orange",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 25
+    },
+    {
+      "type": "stat",
+      "title": "Failures",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 4,
+        "y": 22
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "watchdog_consecutive_failures{service_name=~\"$svc_watchdog_network\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "id": 26
+    },
+    {
+      "type": "gauge",
+      "title": "Pkt Loss%",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 7,
+        "y": 22
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "watchdog_packet_loss_percent{service_name=~\"$svc_watchdog_network\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 27
+    },
+    {
+      "type": "timeseries",
+      "title": "Check Duration (p50/p95)",
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 10,
+        "y": 22
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(watchdog_check_duration_seconds_bucket{service_name=~\"$svc_watchdog_network\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(watchdog_check_duration_seconds_bucket{service_name=~\"$svc_watchdog_network\"}[5m])))",
+          "legendFormat": "p50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "id": 28
+    },
+    {
+      "type": "row",
+      "id": 29,
+      "title": "$svc_gateway [API Gateway]",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "collapsed": false,
+      "repeat": "svc_gateway"
+    },
+    {
+      "type": "stat",
+      "title": "Health",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 0,
+        "y": 29
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "component_health_ratio{service_name=~\"$svc_gateway\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0.49,
+                "result": {
+                  "text": "UNHEALTHY",
+                  "color": "red",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5,
+                "to": 0.99,
+                "result": {
+                  "text": "DEGRADED",
+                  "color": "orange",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 30
+    },
+    {
+      "type": "stat",
+      "title": "Gateway Conn",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 3,
+        "y": 29
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gateway_connections_active{service_name=~\"$svc_gateway\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "id": 31
+    },
+    {
+      "type": "stat",
+      "title": "HTTP Active",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 29
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "http_server_active_requests{service_name=~\"$svc_gateway\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "id": 32
+    },
+    {
+      "type": "timeseries",
+      "title": "Routing Duration (p95)",
+      "gridPos": {
+        "h": 5,
+        "w": 7,
+        "x": 9,
+        "y": 29
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(gateway_request_routing_duration_seconds_bucket{service_name=~\"$svc_gateway\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(gateway_request_routing_duration_seconds_bucket{service_name=~\"$svc_gateway\"}[5m])))",
+          "legendFormat": "p50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "id": 33
+    },
+    {
+      "type": "stat",
+      "title": "Dep Up",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 16,
+        "y": 29
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "service_dependency_up_ratio{service_name=~\"$svc_gateway\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0.49,
+                "result": {
+                  "text": "UNHEALTHY",
+                  "color": "red",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5,
+                "to": 0.99,
+                "result": {
+                  "text": "DEGRADED",
+                  "color": "orange",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 34
+    },
+    {
+      "type": "gauge",
+      "title": "CPU%",
+      "gridPos": {
+        "h": 5,
+        "w": 2,
+        "x": 19,
+        "y": 29
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_cpu_usage_ratio{service_name=~\"$svc_gateway\"} * 100"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 35
+    },
+    {
+      "type": "gauge",
+      "title": "Mem",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 21,
+        "y": 29
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_memory_usage_bytes{service_name=~\"$svc_gateway\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "max": 536870912,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 268435456
+              },
+              {
+                "color": "red",
+                "value": 429496729
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 36
+    },
+    {
+      "type": "row",
+      "id": 37,
+      "title": "$svc_broker [Message Broker]",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "collapsed": false,
+      "repeat": "svc_broker"
+    },
+    {
+      "type": "stat",
+      "title": "Health",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 0,
+        "y": 36
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "component_health_ratio{service_name=~\"$svc_broker\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0.49,
+                "result": {
+                  "text": "UNHEALTHY",
+                  "color": "red",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5,
+                "to": 0.99,
+                "result": {
+                  "text": "DEGRADED",
+                  "color": "orange",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 38
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue Depth",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 3,
+        "y": 36
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "messaging_queue_depth{service_name=~\"$svc_broker\"}",
           "legendFormat": "{{messaging_destination_name}}"
         }
       ],
       "fieldConfig": {
         "defaults": {}
       },
-      "id": 11
+      "id": 39
     },
     {
-      "type": "stat",
-      "title": "Gateway Connections",
+      "type": "timeseries",
+      "title": "Pub vs Consume /min",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 13
+        "h": 5,
+        "w": 7,
+        "x": 9,
+        "y": 36
       },
       "datasource": {
         "type": "prometheus",
@@ -1386,31 +2143,28 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "gateway_connections_active{service_name=~\"$sub_component\"}"
+          "expr": "sum by (messaging_destination_name) (rate(messaging_publish_messages_total{service_name=~\"$svc_broker\"}[1m])) * 60",
+          "legendFormat": "pub {{messaging_destination_name}}"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (messaging_destination_name) (rate(messaging_process_messages_total{service_name=~\"$svc_broker\"}[1m])) * 60",
+          "legendFormat": "cons {{messaging_destination_name}}"
         }
       ],
       "fieldConfig": {
         "defaults": {}
       },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "graphMode": "none",
-        "textMode": "auto"
-      },
-      "id": 12
+      "id": 40
     },
     {
-      "type": "gauge",
-      "title": "CPU %",
+      "type": "timeseries",
+      "title": "Consumer Lag",
       "gridPos": {
-        "h": 4,
-        "w": 4,
+        "h": 5,
+        "w": 5,
         "x": 16,
-        "y": 1
+        "y": 36
       },
       "datasource": {
         "type": "prometheus",
@@ -1419,54 +2173,25 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "process_cpu_usage_percent{service_name=~\"$sub_component\"}"
-        },
-        {
-          "refId": "B",
-          "expr": "vehicle_cpu_usage_percent{service_name=~\"$sub_component\"}"
+          "expr": "messaging_consumer_lag{service_name=~\"$svc_broker\"}",
+          "legendFormat": "{{messaging_destination_name}}"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
+          "unit": "short"
         }
       },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "id": 13
+      "id": 41
     },
     {
       "type": "gauge",
-      "title": "Memory %",
+      "title": "CPU%",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 1
+        "h": 5,
+        "w": 3,
+        "x": 21,
+        "y": 36
       },
       "datasource": {
         "type": "prometheus",
@@ -1475,11 +2200,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "process_memory_usage_percent{service_name=~\"$sub_component\"}"
-        },
-        {
-          "refId": "B",
-          "expr": "vehicle_memory_usage_percent{service_name=~\"$sub_component\"}"
+          "expr": "process_cpu_usage_ratio{service_name=~\"$svc_broker\"} * 100"
         }
       ],
       "fieldConfig": {
@@ -1513,7 +2234,7 @@
           ]
         }
       },
-      "id": 14
+      "id": 42
     }
   ]
 }
