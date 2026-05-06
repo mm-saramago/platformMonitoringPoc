@@ -3,8 +3,8 @@
   "title": "Feature - Remote Wakeup",
   "tags": [
     "feature",
-    "remote-wakeup",
-    "poc"
+    "poc",
+    "remote-wakeup"
   ],
   "schemaVersion": 39,
   "version": 1,
@@ -15,14 +15,110 @@
   },
   "timezone": "browser",
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "fleet",
+        "type": "query",
+        "label": "Fleet",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio, fleet_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "environment",
+        "type": "query",
+        "label": "Environment",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio, deployment_environment)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "feature",
+        "type": "query",
+        "label": "Feature",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name!=\"crosscutting-infrastructure\"}, feature_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "component_type",
+        "type": "query",
+        "label": "Component Type",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=~\"$feature\", deployment_environment=~\"$environment\"}, component_type)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "component",
+        "type": "query",
+        "label": "Component",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=~\"$feature\", deployment_environment=~\"$environment\", component_type=~\"$component_type\"}, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      }
+    ]
   },
   "annotations": {
     "list": []
   },
   "links": [
     {
-      "title": "Up to Fleet",
+      "title": "Fleet",
       "type": "link",
       "url": "/d/fleet",
       "icon": "external link"
@@ -44,9 +140,9 @@
     {
       "type": "stat",
       "id": 1,
-      "title": "Remote Wakeup API (Wayside)",
+      "title": "$component",
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 8,
         "x": 0,
         "y": 1
@@ -58,9 +154,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "min(service_dependency_up_ratio{service_name=\"remote-wakeup-api\"}) or on() vector(0)"
+          "expr": "avg by (service_name, component_type, fleet_name, feature_name) (component_health_ratio{fleet_name=~\"$fleet\", feature_name=~\"$feature\", deployment_environment=~\"$environment\", component_type=~\"non-software-monitor|crosscutting-service|train-side-sw|microservice|monolith\", service_name=~\"$component\"})",
+          "legendFormat": "{{service_name}}"
         }
       ],
+      "repeat": "component",
+      "repeatDirection": "h",
+      "maxPerRow": 3,
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -124,109 +224,7 @@
           "links": [
             {
               "title": "Drill down",
-              "url": "/d/component-remote-wakeup-api",
-              "targetBlank": false
-            }
-          ]
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        }
-      }
-    },
-    {
-      "type": "stat",
-      "id": 2,
-      "title": "Remote Wakeup Service (Vehicle)",
-      "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 8,
-        "y": 1
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "avg(vehicle_connectivity_state_ratio{service_name=\"remote-wakeup-service\"}) or on() vector(0)"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 0,
-                "to": 0.49,
-                "result": {
-                  "text": "UNHEALTHY",
-                  "color": "red",
-                  "index": 0
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 0.5,
-                "to": 0.99,
-                "result": {
-                  "text": "DEGRADED",
-                  "color": "orange",
-                  "index": 1
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 1,
-                "to": 1,
-                "result": {
-                  "text": "HEALTHY",
-                  "color": "green",
-                  "index": 2
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.5
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/component-remote-wakeup-service",
+              "url": "/d/sub-component?var-fleet=${__field.labels.fleet_name}&var-feature=${__field.labels.feature_name}&var-sub_component=${__field.labels.service_name}",
               "targetBlank": false
             }
           ]

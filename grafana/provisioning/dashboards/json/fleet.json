@@ -14,11 +14,89 @@
   },
   "timezone": "browser",
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "fleet",
+        "type": "query",
+        "label": "Fleet",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio, fleet_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "environment",
+        "type": "query",
+        "label": "Environment",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio, deployment_environment)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "f_feature",
+        "type": "query",
+        "label": "Feature",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name!=\"crosscutting-infrastructure\"}, feature_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "cc_group",
+        "type": "query",
+        "label": "CC Group",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=\"crosscutting-infrastructure\"}, component_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      }
+    ]
   },
   "annotations": {
     "list": []
   },
+  "links": [],
   "panels": [
     {
       "type": "row",
@@ -35,9 +113,9 @@
     {
       "type": "stat",
       "id": 1,
-      "title": "Remote Wakeup (Feature)",
+      "title": "$f_feature",
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 8,
         "x": 0,
         "y": 1
@@ -49,9 +127,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "((min(service_dependency_up_ratio{service_name=\"remote-wakeup-api\"}) or on() vector(0)) + (avg(vehicle_connectivity_state_ratio{service_name=\"remote-wakeup-service\"}) or on() vector(0))) / 2"
+          "expr": "avg(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$f_feature\"})"
         }
       ],
+      "repeat": "f_feature",
+      "repeatDirection": "h",
+      "maxPerRow": 3,
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -115,7 +196,7 @@
           "links": [
             {
               "title": "Drill down",
-              "url": "/d/feature-remote-wakeup",
+              "url": "/d/feature-remote-wakeup?var-fleet=$fleet&var-feature=$f_feature",
               "targetBlank": false
             }
           ]
@@ -142,19 +223,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "collapsed": false
     },
     {
       "type": "stat",
       "id": 2,
-      "title": "Crosscutting Component Infrastructure",
+      "title": "$cc_group",
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 8,
         "x": 0,
-        "y": 8
+        "y": 9
       },
       "datasource": {
         "type": "prometheus",
@@ -163,9 +244,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "((avg(watchdog_check_health_ratio{service_name=\"k8s-node\"}) or on() vector(0)) + (min(service_dependency_up_ratio{service_name=\"t2g-gateway\"}) or on() vector(0)) + (((max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 500)) / 2 or on() vector(1)) + (((max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 500)) / 2 or on() vector(1)) + (avg(watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"}) or on() vector(0)) + (avg(watchdog_check_health_ratio{service_name=\"vpn-monitor\"}) or on() vector(0))) / 6"
+          "expr": "avg(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=\"crosscutting-infrastructure\", component_name=~\"$cc_group\"})"
         }
       ],
+      "repeat": "cc_group",
+      "repeatDirection": "h",
+      "maxPerRow": 3,
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -229,7 +313,7 @@
           "links": [
             {
               "title": "Drill down",
-              "url": "/d/crosscutting-infra",
+              "url": "/d/crosscutting-infra?var-fleet=$fleet&var-cc_group=$cc_group",
               "targetBlank": false
             }
           ]

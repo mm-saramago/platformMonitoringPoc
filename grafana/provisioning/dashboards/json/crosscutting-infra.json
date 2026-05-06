@@ -2,8 +2,8 @@
   "uid": "crosscutting-infra",
   "title": "Crosscutting Component - Infrastructure",
   "tags": [
-    "infra",
     "crosscutting",
+    "infra",
     "poc"
   ],
   "schemaVersion": 39,
@@ -15,14 +15,110 @@
   },
   "timezone": "browser",
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "fleet",
+        "type": "query",
+        "label": "Fleet",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio, fleet_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "environment",
+        "type": "query",
+        "label": "Environment",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio, deployment_environment)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "cc_group",
+        "type": "query",
+        "label": "Group",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=\"crosscutting-infrastructure\"}, component_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "component_type",
+        "type": "query",
+        "label": "Component Type",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=\"crosscutting-infrastructure\", component_name=~\"$cc_group\", deployment_environment=~\"$environment\"}, component_type)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "component",
+        "type": "query",
+        "label": "Component",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=\"crosscutting-infrastructure\", component_name=~\"$cc_group\", deployment_environment=~\"$environment\", component_type=~\"$component_type\"}, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
+      }
+    ]
   },
   "annotations": {
     "list": []
   },
   "links": [
     {
-      "title": "Up to Fleet",
+      "title": "Fleet",
       "type": "link",
       "url": "/d/fleet",
       "icon": "external link"
@@ -30,14 +126,26 @@
   ],
   "panels": [
     {
+      "type": "row",
+      "id": 100,
+      "title": "Components",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "collapsed": false
+    },
+    {
       "type": "stat",
       "id": 1,
-      "title": "K8s Node",
+      "title": "$component",
       "gridPos": {
-        "h": 5,
+        "h": 7,
         "w": 6,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "datasource": {
         "type": "prometheus",
@@ -46,9 +154,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg(watchdog_check_health_ratio{service_name=\"k8s-node\"}) or on() vector(0)"
+          "expr": "avg by (service_name, component_type, fleet_name) (component_health_ratio{fleet_name=~\"$fleet\", feature_name=\"crosscutting-infrastructure\", component_name=~\"$cc_group\", deployment_environment=~\"$environment\", component_type=~\"non-software-monitor|crosscutting-service|train-side-sw|microservice|monolith\", service_name=~\"$component\"})",
+          "legendFormat": "{{service_name}}"
         }
       ],
+      "repeat": "component",
+      "repeatDirection": "h",
+      "maxPerRow": 3,
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -112,517 +224,7 @@
           "links": [
             {
               "title": "Drill down",
-              "url": "/d/infra-k8s-node",
-              "targetBlank": false
-            }
-          ]
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        }
-      }
-    },
-    {
-      "type": "stat",
-      "id": 2,
-      "title": "T2G Gateway",
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "min(service_dependency_up_ratio{service_name=\"t2g-gateway\"}) or on() vector(0)"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 0,
-                "to": 0.49,
-                "result": {
-                  "text": "UNHEALTHY",
-                  "color": "red",
-                  "index": 0
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 0.5,
-                "to": 0.99,
-                "result": {
-                  "text": "DEGRADED",
-                  "color": "orange",
-                  "index": 1
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 1,
-                "to": 1,
-                "result": {
-                  "text": "HEALTHY",
-                  "color": "green",
-                  "index": 2
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.5
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/infra-t2g-gateway",
-              "targetBlank": false
-            }
-          ]
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        }
-      }
-    },
-    {
-      "type": "stat",
-      "id": 3,
-      "title": "RabbitMQ",
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "((max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"rabbitmq\"}) < bool 500)) / 2 or on() vector(1)"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 0,
-                "to": 0.49,
-                "result": {
-                  "text": "UNHEALTHY",
-                  "color": "red",
-                  "index": 0
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 0.5,
-                "to": 0.99,
-                "result": {
-                  "text": "DEGRADED",
-                  "color": "orange",
-                  "index": 1
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 1,
-                "to": 1,
-                "result": {
-                  "text": "HEALTHY",
-                  "color": "green",
-                  "index": 2
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.5
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/infra-rabbitmq",
-              "targetBlank": false
-            }
-          ]
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        }
-      }
-    },
-    {
-      "type": "stat",
-      "id": 4,
-      "title": "MQTT Broker",
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 18,
-        "y": 0
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "((max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 2000) + (max(messaging_queue_depth{service_name=\"mqtt-broker\"}) < bool 500)) / 2 or on() vector(1)"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 0,
-                "to": 0.49,
-                "result": {
-                  "text": "UNHEALTHY",
-                  "color": "red",
-                  "index": 0
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 0.5,
-                "to": 0.99,
-                "result": {
-                  "text": "DEGRADED",
-                  "color": "orange",
-                  "index": 1
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 1,
-                "to": 1,
-                "result": {
-                  "text": "HEALTHY",
-                  "color": "green",
-                  "index": 2
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.5
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/infra-mqtt-broker",
-              "targetBlank": false
-            }
-          ]
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        }
-      }
-    },
-    {
-      "type": "stat",
-      "id": 5,
-      "title": "VPN Terminator Ground",
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 0,
-        "y": 5
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "avg(watchdog_check_health_ratio{service_name=\"vpn-terminator-ground\"}) or on() vector(0)"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 0,
-                "to": 0.49,
-                "result": {
-                  "text": "UNHEALTHY",
-                  "color": "red",
-                  "index": 0
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 0.5,
-                "to": 0.99,
-                "result": {
-                  "text": "DEGRADED",
-                  "color": "orange",
-                  "index": 1
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 1,
-                "to": 1,
-                "result": {
-                  "text": "HEALTHY",
-                  "color": "green",
-                  "index": 2
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.5
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/infra-vpn-terminator-ground",
-              "targetBlank": false
-            }
-          ]
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        }
-      }
-    },
-    {
-      "type": "stat",
-      "id": 6,
-      "title": "VPN Monitor (Vehicle)",
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 6,
-        "y": 5
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "avg(watchdog_check_health_ratio{service_name=\"vpn-monitor\"}) or on() vector(0)"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 0,
-                "to": 0.49,
-                "result": {
-                  "text": "UNHEALTHY",
-                  "color": "red",
-                  "index": 0
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 0.5,
-                "to": 0.99,
-                "result": {
-                  "text": "DEGRADED",
-                  "color": "orange",
-                  "index": 1
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 1,
-                "to": 1,
-                "result": {
-                  "text": "HEALTHY",
-                  "color": "green",
-                  "index": 2
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0.5
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/infra-vpn-monitor",
+              "url": "/d/sub-component?var-fleet=${__field.labels.fleet_name}&var-feature=crosscutting-infrastructure&var-sub_component=${__field.labels.service_name}",
               "targetBlank": false
             }
           ]
