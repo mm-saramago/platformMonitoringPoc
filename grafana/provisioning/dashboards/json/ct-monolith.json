@@ -1,8 +1,8 @@
 {
-  "uid": "fleet",
-  "title": "Fleet",
+  "uid": "ct-monolith",
+  "title": "Component Type - Monolith",
   "tags": [
-    "fleet",
+    "component-type",
     "poc"
   ],
   "schemaVersion": 39,
@@ -54,34 +54,15 @@
         "allValue": ".*"
       },
       {
-        "name": "f_feature",
+        "name": "service",
         "type": "query",
-        "label": "Feature",
+        "label": "Service",
         "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
         },
         "query": {
-          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name!=\"crosscutting-infrastructure\"}, feature_name)",
-          "refId": "StandardVariableQuery"
-        },
-        "refresh": 2,
-        "sort": 1,
-        "hide": 0,
-        "includeAll": true,
-        "multi": true,
-        "allValue": ".*"
-      },
-      {
-        "name": "cc_group",
-        "type": "query",
-        "label": "CC Group",
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
-        "query": {
-          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=\"crosscutting-infrastructure\"}, component_name)",
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", component_type=\"monolith\"}, service_name)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -96,27 +77,34 @@
   "annotations": {
     "list": []
   },
-  "links": [],
+  "links": [
+    {
+      "title": "Fleet",
+      "type": "link",
+      "url": "/d/fleet",
+      "icon": "external link"
+    }
+  ],
   "panels": [
     {
       "type": "row",
-      "id": 100,
-      "title": "Features",
+      "id": 1,
+      "title": "$service",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "collapsed": false
+      "collapsed": false,
+      "repeat": "service"
     },
     {
       "type": "stat",
-      "id": 1,
-      "title": "$f_feature",
+      "title": "Health",
       "gridPos": {
-        "h": 7,
-        "w": 8,
+        "h": 5,
+        "w": 3,
         "x": 0,
         "y": 1
       },
@@ -127,12 +115,9 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$f_feature\"})"
+          "expr": "component_health_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
-      "repeat": "f_feature",
-      "repeatDirection": "h",
-      "maxPerRow": 3,
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -192,14 +177,7 @@
           },
           "color": {
             "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/feature?var-fleet=$fleet&var-feature=$f_feature",
-              "targetBlank": false
-            }
-          ]
+          }
         }
       },
       "options": {
@@ -209,33 +187,19 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+          ]
         }
-      }
-    },
-    {
-      "type": "row",
-      "id": 200,
-      "title": "Crosscutting",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 8
       },
-      "collapsed": false
+      "id": 2
     },
     {
       "type": "stat",
-      "id": 2,
-      "title": "$cc_group",
+      "title": "HTTP Active",
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 9
+        "h": 5,
+        "w": 3,
+        "x": 3,
+        "y": 1
       },
       "datasource": {
         "type": "prometheus",
@@ -244,12 +208,42 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=\"crosscutting-infrastructure\", component_name=~\"$cc_group\"})"
+          "expr": "http_server_active_requests{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
-      "repeat": "cc_group",
-      "repeatDirection": "h",
-      "maxPerRow": 3,
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "id": 3
+    },
+    {
+      "type": "stat",
+      "title": "Dep Up",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "service_dependency_up_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -309,14 +303,7 @@
           },
           "color": {
             "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/feature?var-fleet=$fleet&var-feature=crosscutting-infrastructure",
-              "targetBlank": false
-            }
-          ]
+          }
         }
       },
       "options": {
@@ -326,11 +313,146 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+          ]
         }
-      }
+      },
+      "id": 4
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Duration (p50/p95)",
+      "gridPos": {
+        "h": 5,
+        "w": 7,
+        "x": 9,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[5m])))",
+          "legendFormat": "p50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "id": 5
+    },
+    {
+      "type": "gauge",
+      "title": "CPU%",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 16,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_cpu_usage_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"} * 100"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 6
+    },
+    {
+      "type": "gauge",
+      "title": "Mem",
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 19,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_memory_usage_bytes{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "max": 536870912,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 268435456
+              },
+              {
+                "color": "red",
+                "value": 429496729
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 7
     }
   ]
 }

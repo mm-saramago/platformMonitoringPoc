@@ -1,10 +1,9 @@
 {
-  "uid": "feature-remote-wakeup",
-  "title": "Feature - Remote Wakeup",
+  "uid": "feature",
+  "title": "Feature",
   "tags": [
     "feature",
-    "poc",
-    "remote-wakeup"
+    "poc"
   ],
   "schemaVersion": 39,
   "version": 1,
@@ -63,7 +62,7 @@
           "uid": "prometheus"
         },
         "query": {
-          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name!=\"crosscutting-infrastructure\"}, feature_name)",
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}, feature_name)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -82,7 +81,7 @@
           "uid": "prometheus"
         },
         "query": {
-          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=~\"$feature\", deployment_environment=~\"$environment\"}, component_type)",
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\"}, component_type)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -101,7 +100,7 @@
           "uid": "prometheus"
         },
         "query": {
-          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=~\"$feature\", deployment_environment=~\"$environment\", component_type=~\"$component_type\"}, service_name)",
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$feature\", component_type=~\"$component_type\"}, service_name)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -143,7 +142,7 @@
       "title": "$component",
       "gridPos": {
         "h": 7,
-        "w": 8,
+        "w": 6,
         "x": 0,
         "y": 1
       },
@@ -154,13 +153,13 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg by (service_name, component_type, fleet_name, feature_name) (component_health_ratio{fleet_name=~\"$fleet\", feature_name=~\"$feature\", deployment_environment=~\"$environment\", component_type=~\"non-software-monitor|crosscutting-service|train-side-sw|microservice|monolith\", service_name=~\"$component\"})",
+          "expr": "avg by (service_name, component_type, fleet_name, feature_name) (component_health_ratio{fleet_name=~\"$fleet\", feature_name=~\"$feature\", deployment_environment=~\"$environment\", component_type=~\"$component_type\", service_name=~\"$component\"})",
           "legendFormat": "{{service_name}}"
         }
       ],
       "repeat": "component",
       "repeatDirection": "h",
-      "maxPerRow": 3,
+      "maxPerRow": 4,
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -223,8 +222,8 @@
           },
           "links": [
             {
-              "title": "Drill down",
-              "url": "/d/sub-component?var-fleet=${__field.labels.fleet_name}&var-feature=${__field.labels.feature_name}&var-sub_component=${__field.labels.service_name}",
+              "title": "Details",
+              "url": "/d/ct-${__field.labels.component_type}?var-fleet=${__field.labels.fleet_name}&var-service=${__field.labels.service_name}",
               "targetBlank": false
             }
           ]

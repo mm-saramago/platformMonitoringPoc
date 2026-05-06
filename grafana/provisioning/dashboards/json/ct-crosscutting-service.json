@@ -1,8 +1,8 @@
 {
-  "uid": "fleet",
-  "title": "Fleet",
+  "uid": "ct-crosscutting-service",
+  "title": "Component Type - Crosscutting Service",
   "tags": [
-    "fleet",
+    "component-type",
     "poc"
   ],
   "schemaVersion": 39,
@@ -54,34 +54,15 @@
         "allValue": ".*"
       },
       {
-        "name": "f_feature",
+        "name": "service",
         "type": "query",
-        "label": "Feature",
+        "label": "Service",
         "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
         },
         "query": {
-          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name!=\"crosscutting-infrastructure\"}, feature_name)",
-          "refId": "StandardVariableQuery"
-        },
-        "refresh": 2,
-        "sort": 1,
-        "hide": 0,
-        "includeAll": true,
-        "multi": true,
-        "allValue": ".*"
-      },
-      {
-        "name": "cc_group",
-        "type": "query",
-        "label": "CC Group",
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
-        "query": {
-          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", feature_name=\"crosscutting-infrastructure\"}, component_name)",
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", component_type=\"crosscutting-service\"}, service_name)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -96,27 +77,34 @@
   "annotations": {
     "list": []
   },
-  "links": [],
+  "links": [
+    {
+      "title": "Fleet",
+      "type": "link",
+      "url": "/d/fleet",
+      "icon": "external link"
+    }
+  ],
   "panels": [
     {
       "type": "row",
-      "id": 100,
-      "title": "Features",
+      "id": 1,
+      "title": "$service",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "collapsed": false
+      "collapsed": false,
+      "repeat": "service"
     },
     {
       "type": "stat",
-      "id": 1,
-      "title": "$f_feature",
+      "title": "Health",
       "gridPos": {
-        "h": 7,
-        "w": 8,
+        "h": 5,
+        "w": 3,
         "x": 0,
         "y": 1
       },
@@ -127,12 +115,9 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=~\"$f_feature\"})"
+          "expr": "component_health_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
-      "repeat": "f_feature",
-      "repeatDirection": "h",
-      "maxPerRow": 3,
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -192,14 +177,7 @@
           },
           "color": {
             "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/feature?var-fleet=$fleet&var-feature=$f_feature",
-              "targetBlank": false
-            }
-          ]
+          }
         }
       },
       "options": {
@@ -209,33 +187,19 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+          ]
         }
-      }
-    },
-    {
-      "type": "row",
-      "id": 200,
-      "title": "Crosscutting",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 8
       },
-      "collapsed": false
+      "id": 2
     },
     {
       "type": "stat",
-      "id": 2,
-      "title": "$cc_group",
+      "title": "Gateway Conn",
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 9
+        "h": 5,
+        "w": 3,
+        "x": 3,
+        "y": 1
       },
       "datasource": {
         "type": "prometheus",
@@ -244,93 +208,156 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", feature_name=\"crosscutting-infrastructure\", component_name=~\"$cc_group\"})"
+          "expr": "gateway_connections_active{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
-      "repeat": "cc_group",
-      "repeatDirection": "h",
-      "maxPerRow": 3,
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "id": 3
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue Depth",
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 6,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "messaging_queue_depth{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}",
+          "legendFormat": "{{messaging_destination_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "id": 4
+    },
+    {
+      "type": "timeseries",
+      "title": "Pub vs Consume /min",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 11,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (messaging_destination_name) (rate(messaging_publish_messages_total{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[1m])) * 60",
+          "legendFormat": "pub {{messaging_destination_name}}"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (messaging_destination_name) (rate(messaging_process_messages_total{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[1m])) * 60",
+          "legendFormat": "cons {{messaging_destination_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "id": 5
+    },
+    {
+      "type": "timeseries",
+      "title": "Routing Duration",
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 17,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(gateway_request_routing_duration_seconds_bucket{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 0,
-                "to": 0.49,
-                "result": {
-                  "text": "UNHEALTHY",
-                  "color": "red",
-                  "index": 0
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 0.5,
-                "to": 0.99,
-                "result": {
-                  "text": "DEGRADED",
-                  "color": "orange",
-                  "index": 1
-                }
-              }
-            },
-            {
-              "type": "range",
-              "options": {
-                "from": 1,
-                "to": 1,
-                "result": {
-                  "text": "HEALTHY",
-                  "color": "green",
-                  "index": 2
-                }
-              }
-            }
-          ],
+          "unit": "s"
+        }
+      },
+      "id": 6
+    },
+    {
+      "type": "gauge",
+      "title": "CPU%",
+      "gridPos": {
+        "h": 5,
+        "w": 2,
+        "x": 22,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_cpu_usage_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"} * 100"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "orange",
-                "value": 0.5
+                "color": "yellow",
+                "value": 60
               },
               {
-                "color": "green",
-                "value": 1
+                "color": "red",
+                "value": 80
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "/d/feature?var-fleet=$fleet&var-feature=crosscutting-infrastructure",
-              "targetBlank": false
-            }
-          ]
+          }
         }
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+          ]
         }
-      }
+      },
+      "id": 7
     }
   ]
 }
