@@ -40,7 +40,7 @@ def configure_telemetry():
             "sub_component.name": SERVICE_NAME,
             "component.type": "non-software-monitor",
             "fleet.name": "QNGR-OrbifloNG-PROD",
-            "feature.type": "crosscutting-component-infra",
+            "feature.type": "cci-network",
             "feature.name": "crosscutting-infrastructure",
             "component.name": "infrastructure-network",
             "service.location": "onboard",

@@ -40,7 +40,7 @@ def configure_telemetry():
             "component.type": "crosscutting-service",
             "fleet.name": "QNGR-OrbifloNG-PROD",
             "feature.name": "crosscutting-infrastructure",
-            "feature.type": "crosscutting-component-infra",
+            "feature.type": "cci-compute",
             "component.name": "infrastructure-compute",
             "service.location": "wayside",
             #Lower level attributes

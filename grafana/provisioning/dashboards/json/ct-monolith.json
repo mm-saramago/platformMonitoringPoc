@@ -71,6 +71,25 @@
         "includeAll": true,
         "multi": true,
         "allValue": ".*"
+      },
+      {
+        "name": "component",
+        "type": "query",
+        "label": "Component",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", service_name=~\"$service\", component_type=\"monolith\"}, component_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
       }
     ]
   },
@@ -115,7 +134,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "component_health_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "component_health_ratio{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -208,7 +227,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "http_server_active_requests{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "http_server_active_requests{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -241,7 +260,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "service_dependency_up_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "service_dependency_up_ratio{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -366,7 +385,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "process_cpu_usage_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"} * 100"
+          "expr": "process_cpu_usage_ratio{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"} * 100"
         }
       ],
       "fieldConfig": {
@@ -418,7 +437,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "process_memory_usage_bytes{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "process_memory_usage_bytes{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -453,6 +472,35 @@
         }
       },
       "id": 7
+    },
+    {
+      "type": "logs",
+      "title": "Logs",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=~\"$service\", deployment_environment=~\"$environment\"} | component_name=~\"$component\" | fleet_name=~\"$fleet\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true
+      },
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "id": 100
     }
   ]
 }

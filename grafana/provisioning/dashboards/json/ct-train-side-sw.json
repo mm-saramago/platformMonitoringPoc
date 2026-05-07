@@ -71,6 +71,25 @@
         "includeAll": true,
         "multi": true,
         "allValue": ".*"
+      },
+      {
+        "name": "component",
+        "type": "query",
+        "label": "Component",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", service_name=~\"$service\", component_type=\"train-side-sw\"}, component_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
       }
     ]
   },
@@ -115,7 +134,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "component_health_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "component_health_ratio{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -208,7 +227,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "vehicle_connectivity_state_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "vehicle_connectivity_state_ratio{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -301,7 +320,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "vehicle_heartbeat_lag_seconds{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "vehicle_heartbeat_lag_seconds{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -353,7 +372,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "vehicle_message_backlog{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "vehicle_message_backlog{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -364,9 +383,7 @@
           "calcs": [
             "lastNotNull"
           ]
-        },
-        "graphMode": "none",
-        "textMode": "auto"
+        }
       },
       "id": 5
     },
@@ -390,9 +407,6 @@
           "legendFormat": "{{vehicle_id}}"
         }
       ],
-      "fieldConfig": {
-        "defaults": {}
-      },
       "id": 6
     },
     {
@@ -414,37 +428,6 @@
           "expr": "vehicle_cpu_usage_percent{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "id": 7
     },
     {
@@ -550,6 +533,35 @@
         }
       },
       "id": 9
+    },
+    {
+      "type": "logs",
+      "title": "Logs",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=~\"$service\", deployment_environment=~\"$environment\"} | component_name=~\"$component\" | fleet_name=~\"$fleet\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true
+      },
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "id": 100
     }
   ]
 }

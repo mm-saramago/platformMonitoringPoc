@@ -71,6 +71,25 @@
         "includeAll": true,
         "multi": true,
         "allValue": ".*"
+      },
+      {
+        "name": "component",
+        "type": "query",
+        "label": "Component",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(component_health_ratio{fleet_name=~\"$fleet\", deployment_environment=~\"$environment\", service_name=~\"$service\", component_type=\"crosscutting-service\"}, component_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*"
       }
     ]
   },
@@ -115,7 +134,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "component_health_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "component_health_ratio{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -208,7 +227,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "gateway_connections_active{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
+          "expr": "gateway_connections_active{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}"
         }
       ],
       "fieldConfig": {
@@ -241,7 +260,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "messaging_queue_depth{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}",
+          "expr": "messaging_queue_depth{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}",
           "legendFormat": "{{messaging_destination_name}}"
         }
       ],
@@ -266,12 +285,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (messaging_destination_name) (rate(messaging_publish_messages_total{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[1m])) * 60",
+          "expr": "sum by (messaging_destination_name) (rate(messaging_publish_messages_total{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[1m])) * 60",
           "legendFormat": "pub {{messaging_destination_name}}"
         },
         {
           "refId": "B",
-          "expr": "sum by (messaging_destination_name) (rate(messaging_process_messages_total{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[1m])) * 60",
+          "expr": "sum by (messaging_destination_name) (rate(messaging_process_messages_total{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[1m])) * 60",
           "legendFormat": "cons {{messaging_destination_name}}"
         }
       ],
@@ -296,7 +315,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(gateway_request_routing_duration_seconds_bucket{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(gateway_request_routing_duration_seconds_bucket{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"}[5m])))",
           "legendFormat": "p95"
         }
       ],
@@ -323,7 +342,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "process_cpu_usage_ratio{service_name=~\"$service\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"} * 100"
+          "expr": "process_cpu_usage_ratio{service_name=~\"$service\", component_name=~\"$component\", fleet_name=~\"$fleet\", deployment_environment=~\"$environment\"} * 100"
         }
       ],
       "fieldConfig": {
@@ -358,6 +377,35 @@
         }
       },
       "id": 7
+    },
+    {
+      "type": "logs",
+      "title": "Logs",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=~\"$service\", deployment_environment=~\"$environment\"} | component_name=~\"$component\" | fleet_name=~\"$fleet\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true
+      },
+      "fieldConfig": {
+        "defaults": {}
+      },
+      "id": 100
     }
   ]
 }
