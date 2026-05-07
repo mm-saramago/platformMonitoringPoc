@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 6,
+  "id": 15,
   "links": [],
   "panels": [
     {
@@ -350,7 +350,7 @@
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "compute"
           ],
@@ -382,7 +382,7 @@
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "All"
           ],
@@ -414,7 +414,7 @@
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "All"
           ],
@@ -455,6 +455,6 @@
   "timezone": "browser",
   "title": "Fleet (v2)",
   "uid": "v2-fleet",
-  "version": 24,
+  "version": 2,
   "weekStart": ""
 }
