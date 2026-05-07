@@ -22,3 +22,14 @@ providers:
     options:
       path: /etc/grafana/provisioning/dashboards/component-types
       foldersFromFilesStructure: false
+
+  - name: 'v2-dashboards'
+    orgId: 1
+    folder: 'Platform Monitoring v2'
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 10
+    options:
+      path: /etc/grafana/provisioning/dashboards/json/v2
+      foldersFromFilesStructure: false

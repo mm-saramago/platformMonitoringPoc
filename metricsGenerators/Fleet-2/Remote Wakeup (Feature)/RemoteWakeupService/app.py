@@ -40,7 +40,7 @@ def configure_telemetry():
             "sub_component.name": SERVICE_NAME,
             "component.type": "train-side-sw",
             "fleet.name": "test-fleet",
-            "feature.type": "feature",
+            "feature.type": "functionality-feature",
             "feature.name": "remote-wakeup",
             "component.name": "remote-wakeup-service",
             "service.location": "onboard",

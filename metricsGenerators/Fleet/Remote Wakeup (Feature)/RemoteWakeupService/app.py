@@ -40,9 +40,9 @@ def configure_telemetry():
             "sub_component.name": SERVICE_NAME,
             "component.type": "train-side-sw",
             "fleet.name": "QNGR-OrbifloNG-PROD",
-            "feature.type": "feature",
+            "feature.type": "functionality-feature",
             "feature.name": "remote-wakeup",
-            "component.name": "remote-wakeup-service",
+            "component.name": SERVICE_NAME,
             "service.location": "onboard",
             "deployment.environment": "local",
             #Lower level attributes

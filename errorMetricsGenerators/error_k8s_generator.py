@@ -36,9 +36,9 @@ def configure_telemetry():
             "sub_component.name": SERVICE_NAME,
             "component.type": "non-software-monitor",
             "fleet.name": "QNGR-OrbifloNG-PROD",
-            "feature.name": "crosscutting-infrastructure",
-            "feature.type": "cci-compute",
-            "component.name": "infrastructure-compute",
+            "feature.type": "crosscutting-component-infrastructure",
+            "feature.name": "compute",
+            "component.name": SERVICE_NAME,
             "service.location": "wayside",
             #Lower level attributes
             "service.namespace": "sample-apps",

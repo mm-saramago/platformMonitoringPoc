@@ -39,9 +39,9 @@ def configure_telemetry():
             "sub_component.name": SERVICE_NAME,
             "component.type": "microservice",
             "fleet.name": "QNGR-OrbifloNG-PROD",
-            "feature.type": "feature",
+            "feature.type": "functionality-feature",
             "feature.name": "remote-wakeup",
-            "component.name": "remote-wakeup-api",
+            "component.name": SERVICE_NAME,
             "service.location": "wayside",
             "deployment.environment": "local",
             #Lower level attributes
